@@ -19,6 +19,11 @@ namespace DDIntegration
             request.Appsecret = ConfigurationManager.AppSettings["Appsecret"];
             request.SetHttpMethod("GET");
             OapiGettokenResponse response = client.Execute(request);
+            if (response.Errcode != 0)
+            {
+                throw new Exception("获取AccessToken失败，错误信息: " + response.Errmsg);
+            }
+
             string accessToken = response.AccessToken;
             Console.WriteLine(string.Format("获取AccessToken成功，Token:{0}。", accessToken));
             return accessToken;

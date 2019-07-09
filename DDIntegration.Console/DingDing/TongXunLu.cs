@@ -26,8 +26,7 @@ namespace DDIntegration
             OapiDepartmentListResponse response = client.Execute(request, accessToken);
             if(response.Errcode != 0)
             {
-                Console.WriteLine("获取部门列表失败，错误信息: " + response.Errmsg);
-                return null;
+                throw new Exception("获取部门列表失败，错误信息: " + response.Errmsg);
             }
             return response.Department;
         }
@@ -52,8 +51,7 @@ namespace DDIntegration
                 OapiUserGetDeptMemberResponse response = client.Execute(req, accessToken);
                 if (response.Errcode != 0)
                 {
-                    Console.WriteLine("获取部门列表失败，错误信息: " + response.Errmsg);
-                    return null;
+                    throw new Exception("获取部门列表失败，错误信息: " + response.Errmsg);
                 }
                 userIds.AddRange(response.UserIds);
             }

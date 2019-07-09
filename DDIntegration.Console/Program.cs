@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DingTalk.Api.Response;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -12,13 +13,13 @@ namespace DDIntegration
             {
                 try
                 {
-                    string accessToken = Common.GetAccessToken();
-                    List<string> userIds = TongXunLu.GetAllUsers(accessToken);
-                    KaoQin.GetAttendanceRecords(accessToken, userIds);
+                    List<OapiAttendanceListResponse.RecordresultDomain> attendances = DDInteractor.GetAttendanceRecords();
                 }
                 catch(Exception ex)
                 {
                     Console.WriteLine(ex.Message);
+                    Thread.Sleep(60 * 60 * 1000);
+                    continue;
                 }
 
                 Thread.Sleep(60 * 1000);

@@ -45,11 +45,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Common.cs" />
-    <Compile Include="KaoQin.cs" />
+    <Compile Include="DingDing\Common.cs" />
+    <Compile Include="DingDing\DDInteractor.cs" />
+    <Compile Include="DingDing\KaoQin.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TongXunLu.cs" />
+    <Compile Include="DingDing\TongXunLu.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
