@@ -18,12 +18,33 @@ namespace DDIntegration
 
         public static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecords(string accessToken, List<string> userIds)
         {
+            if(userIds == null || userIds.Count == 0)
+            {
+                return null;
+            }
+
             List<OapiAttendanceListResponse.RecordresultDomain> results = new List<OapiAttendanceListResponse.RecordresultDomain>();
 
             DateTime now = DateTime.Now;
             DateTime to = new DateTime(now.Year, now.Month, now.Day);
             DateTime from = to.AddDays(-1);
             to = to.AddSeconds(-1);
+
+            for(int i = 0; i < userIds.Count; i = i + 50)
+            {
+                results.AddRange(GetAttendanceRecords(accessToken, userIds.GetRange(i, 50), from, to));
+            }
+            
+            return results;
+        }
+
+        private static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecords(
+            string accessToken, 
+            List<string> userIds,
+            DateTime from,
+            DateTime to)
+        {
+            List<OapiAttendanceListResponse.RecordresultDomain> results = new List<OapiAttendanceListResponse.RecordresultDomain>();
 
             long offset = 0L;
             long limit = 50L;
@@ -39,23 +60,18 @@ namespace DDIntegration
                 OapiAttendanceListResponse response = client.Execute(request, accessToken);
                 if (response.Errcode != 0)
                 {
-                    Console.WriteLine("获取打卡数据失败，错误信息: " + response.Errmsg);
-                    return null;
-                }
-
-                if(response.Recordresult == null || response.Recordresult.Count == 0)
-                {
-                    break;
+                    throw new Exception("获取打卡数据失败，错误信息: " + response.Errmsg);
                 }
 
                 results.AddRange(response.Recordresult);
-                offset += limit;
-                if(response.Recordresult.Count < limit)
+
+                if (!response.HasMore)
                 {
                     break;
                 }
+                offset += limit;
             }
-            
+
             return results;
         }
     }
