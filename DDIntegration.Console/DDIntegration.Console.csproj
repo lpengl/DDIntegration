@@ -52,6 +52,8 @@
     <Compile Include="DingDing\DDInteractor.cs" />
     <Compile Include="DingDing\KaoQin.cs" />
     <Compile Include="H3Yun\CreateAttendanceRequest.cs" />
+    <Compile Include="H3Yun\GetAttendanceRequest.cs" />
+    <Compile Include="H3Yun\GetAttendanceResponse.cs" />
     <Compile Include="H3Yun\H3YunAttendance.cs" />
     <Compile Include="H3Yun\H3YunInteractor.cs" />
     <Compile Include="Program.cs" />

@@ -9,7 +9,7 @@ namespace DDIntegration
 {
     class DDInteractor
     {
-        public static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecords()
+        public static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecords(DateTime startDate)
         {
             string accessToken = Common.GetAccessToken();
             List<string> userIds = TongXunLu.GetAllUsers(accessToken);

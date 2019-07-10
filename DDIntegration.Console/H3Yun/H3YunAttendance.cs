@@ -85,24 +85,119 @@ namespace DDIntegration
             {
                 return null;
             }
+            DateTime origin = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
             H3YunAttendance result = new H3YunAttendance();
             result.F0000001 = record.Id.ToString();
             result.F0000002 = record.GroupId.ToString();
             result.F0000003 = record.PlanId.ToString();
-            result.F0000004 = record.ProcInstId.ToString();
-            result.F0000005 = new DateTime(long.Parse(record.WorkDate));
+            result.F0000004 = record.RecordId.ToString();
+            result.F0000005 = origin.AddMilliseconds(long.Parse(record.WorkDate)).ToLocalTime();
             result.F0000006 = record.UserId;
-            result.F0000007 = record.CheckType;
-            result.F0000008 = record.TimeResult;
-            result.F0000009 = record.LocationResult;
+            result.F0000007 = GetCheckType(record.CheckType);
+            result.F0000008 = GetTimeResult(record.TimeResult);
+            result.F0000009 = GetLocationResult(record.LocationResult);
             result.F0000010 = record.ApproveId.ToString();
             result.F0000011 = record.ProcInstId;
-            result.F0000012 = new DateTime(long.Parse(record.BaseCheckTime));
-            result.F0000013 = new DateTime(long.Parse(record.UserCheckTime));
-            result.F0000014 = record.SourceType;
+            result.F0000012 = origin.AddMilliseconds(long.Parse(record.BaseCheckTime)).ToLocalTime();
+            result.F0000013 = origin.AddMilliseconds(long.Parse(record.UserCheckTime)).ToLocalTime();
+            result.F0000014 = GetSourceType(record.SourceType);
 
             return result;
+        }
+
+        private static string GetCheckType(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return string.Empty;
+            }
+
+            switch (input.ToLower())
+            {
+                case "onduty":
+                    return "上班";
+                case "offduty":
+                    return "下班";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static string GetTimeResult(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return string.Empty;
+            }
+
+            switch (input.ToLower())
+            {
+                case "normal":
+                    return "正常";
+                case "early":
+                    return "早退";
+                case "late":
+                    return "迟到";
+                case "seriousLate":
+                    return "严重迟到";
+                case "absenteeism":
+                    return "旷工迟到";
+                case "notsigned":
+                    return "未打卡";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static string GetLocationResult(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return string.Empty;
+            }
+
+            switch (input.ToLower())
+            {
+                case "Normal":
+                    return "范围内";
+                case "Outside":
+                    return "范围外";
+                case "NotSigned":
+                    return "未打卡";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static string GetSourceType(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return string.Empty;
+            }
+
+            switch (input.ToUpper())
+            {
+                case "ATM":
+                    return "考勤机";
+                case "BEACON":
+                    return "IBeacon";
+                case "DING_ATM":
+                    return "钉钉考勤机";
+                case "USER":
+                    return "用户打卡";
+                case "BOSS":
+                    return "老板改签";
+                case "APPROVE":
+                    return "审批系统";
+                case "SYSTEM":
+                    return "考勤系统";
+                case "AUTO_CHECK":
+                    return "自动打卡";
+                default:
+                    return string.Empty;
+            }
         }
     }
 }

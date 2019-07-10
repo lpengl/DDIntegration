@@ -29,10 +29,15 @@ namespace DDIntegration
             DateTime to = new DateTime(now.Year, now.Month, now.Day);
             DateTime from = to.AddDays(-1);
             to = to.AddSeconds(-1);
+            int takeCount = 50;
 
             for(int i = 0; i < userIds.Count; i = i + 50)
             {
-                results.AddRange(GetAttendanceRecords(accessToken, userIds.GetRange(i, 50), from, to));
+                if(i + takeCount > userIds.Count)
+                {
+                    takeCount = userIds.Count - i;
+                }
+                results.AddRange(GetAttendanceRecords(accessToken, userIds.GetRange(i, takeCount), from, to));
             }
             
             return results;
@@ -61,6 +66,11 @@ namespace DDIntegration
                 if (response.Errcode != 0)
                 {
                     throw new Exception("获取打卡数据失败，错误信息: " + response.Errmsg);
+                }
+
+                if(response.Recordresult == null)
+                {
+                    break;
                 }
 
                 results.AddRange(response.Recordresult);
