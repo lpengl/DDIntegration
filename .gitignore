@@ -6,6 +6,8 @@
 .vs
 .vscode
 
+packages/
+
 # User-specific files
 *.suo
 *.user
