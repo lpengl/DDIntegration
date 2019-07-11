@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace DDIntegration
 {
-    public class CreateAttendanceRequest
+    public class H3YunBulkCreateRequest
     {
-        public CreateAttendanceRequest()
+        public H3YunBulkCreateRequest()
         {
             BizObjectArray = new List<string>();
         }

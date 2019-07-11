@@ -51,10 +51,12 @@
     <Compile Include="DingDing\Common.cs" />
     <Compile Include="DingDing\DDInteractor.cs" />
     <Compile Include="DingDing\KaoQin.cs" />
-    <Compile Include="H3Yun\CreateAttendanceRequest.cs" />
-    <Compile Include="H3Yun\GetAttendanceRequest.cs" />
-    <Compile Include="H3Yun\GetAttendanceResponse.cs" />
-    <Compile Include="H3Yun\H3YunAttendance.cs" />
+    <Compile Include="DingDing\ZhiNengRenShi.cs" />
+    <Compile Include="H3Yun\Attendance\GetAttendanceRequest.cs" />
+    <Compile Include="H3Yun\Attendance\GetAttendanceResponse.cs" />
+    <Compile Include="H3Yun\Attendance\H3YunAttendance.cs" />
+    <Compile Include="H3Yun\H3YunBulkCreateRequest.cs" />
+    <Compile Include="H3Yun\H3YunBasicPaymentInfo.cs" />
     <Compile Include="H3Yun\H3YunInteractor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
