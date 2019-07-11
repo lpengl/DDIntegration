@@ -13,7 +13,7 @@ namespace DDIntegration
         {
             string accessToken = Common.GetAccessToken();
             List<string> userIds = TongXunLu.GetAllUsers(accessToken);
-            return KaoQin.GetAttendanceRecords(accessToken, userIds);
+            return KaoQin.GetAttendanceRecords(accessToken, userIds, startDate);
         }
     }
 }

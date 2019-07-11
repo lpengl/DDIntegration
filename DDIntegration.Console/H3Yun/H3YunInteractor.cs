@@ -28,7 +28,10 @@ namespace DDIntegration
         public static DateTime GetStartSyncWorkDate()
         {
             GetAttendanceResponse attendance = GetLastestAttendance();
-            if (attendance.ReturnData != null && attendance.ReturnData.BizObjectArray != null && attendance.ReturnData.BizObjectArray.Count > 0)
+            if (attendance != null &&
+                attendance.ReturnData != null && 
+                attendance.ReturnData.BizObjectArray != null && 
+                attendance.ReturnData.BizObjectArray.Count > 0)
             {
                 DateTime startWorkDate = attendance.ReturnData.BizObjectArray[0].F0000005.AddDays(1);
                 return new DateTime(startWorkDate.Year, startWorkDate.Month, startWorkDate.Day);
@@ -45,30 +48,37 @@ namespace DDIntegration
 
         private static GetAttendanceResponse GetLastestAttendance()
         {
-            GetAttendanceRequest request = new GetAttendanceRequest();
-            request.ActionName = "LoadBizObjects";
-            request.SchemaCode = SchemaCode_Attendance;
-            request.Filter = "{\"FromRowNum\":0,\"ToRowNum\":1,\"RequireCount\":true,\"SortByCollection\":\"[]\",\"ReturnItems\":[],\"Matcher\":{\"Type\":\"And\",\"Matchers\":[]}}";
-            string postData = JsonConvert.SerializeObject(request);
-            HttpContent httpContent = new StringContent(postData);
-            httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            httpContent.Headers.ContentType.CharSet = "utf-8";
-            httpContent.Headers.Add("EngineCode", H3EngineCode);
-            httpContent.Headers.Add("EngineSecret", H3Secret);
-
-            HttpClient httpClient = new HttpClient();
-            HttpResponseMessage response = httpClient.PostAsync(H3YunOapiUrl, httpContent).Result;
-            if (response.IsSuccessStatusCode)
+            try
             {
-                string result = response.Content.ReadAsStringAsync().Result;
-                try
+                GetAttendanceRequest request = new GetAttendanceRequest();
+                request.ActionName = "LoadBizObjects";
+                request.SchemaCode = SchemaCode_Attendance;
+                request.Filter = "{\"FromRowNum\":0,\"ToRowNum\":1,\"RequireCount\":true,\"SortByCollection\":\"[]\",\"ReturnItems\":[],\"Matcher\":{\"Type\":\"And\",\"Matchers\":[]}}";
+                string postData = JsonConvert.SerializeObject(request);
+                HttpContent httpContent = new StringContent(postData);
+                httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                httpContent.Headers.ContentType.CharSet = "utf-8";
+                httpContent.Headers.Add("EngineCode", H3EngineCode);
+                httpContent.Headers.Add("EngineSecret", H3Secret);
+
+                HttpClient httpClient = new HttpClient();
+                HttpResponseMessage response = httpClient.PostAsync(H3YunOapiUrl, httpContent).Result;
+                if (response.IsSuccessStatusCode)
                 {
-                    return JsonConvert.DeserializeObject<GetAttendanceResponse>(result);
+                    string result = response.Content.ReadAsStringAsync().Result;
+                    try
+                    {
+                        return JsonConvert.DeserializeObject<GetAttendanceResponse>(result);
+                    }
+                    catch
+                    {
+                        Console.WriteLine(result);
+                    }
                 }
-                catch
-                {
-                    Console.WriteLine(result);
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
             }
 
             return null;

@@ -16,7 +16,10 @@ namespace DDIntegration
     {
         private const string ListAttendanceRecordUrl = "https://oapi.dingtalk.com/attendance/listRecord";
 
-        public static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecords(string accessToken, List<string> userIds)
+        public static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecords(
+            string accessToken, 
+            List<string> userIds,
+            DateTime startDate)
         {
             if(userIds == null || userIds.Count == 0)
             {
@@ -27,17 +30,21 @@ namespace DDIntegration
 
             DateTime now = DateTime.Now;
             DateTime to = new DateTime(now.Year, now.Month, now.Day);
-            DateTime from = to.AddDays(-1);
             to = to.AddSeconds(-1);
-            int takeCount = 50;
+            DateTime from = startDate;
+            if(from > to)
+            {
+                from = new DateTime(to.Year, to.Month, to.Day);
+            }
+            int takeUserCount = 50;
 
             for(int i = 0; i < userIds.Count; i = i + 50)
             {
-                if(i + takeCount > userIds.Count)
+                if(i + takeUserCount > userIds.Count)
                 {
-                    takeCount = userIds.Count - i;
+                    takeUserCount = userIds.Count - i;
                 }
-                results.AddRange(GetAttendanceRecords(accessToken, userIds.GetRange(i, takeCount), from, to));
+                results.AddRange(GetAttendanceRecords(accessToken, userIds.GetRange(i, takeUserCount), from, to));
             }
             
             return results;
@@ -45,6 +52,29 @@ namespace DDIntegration
 
         private static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecords(
             string accessToken, 
+            List<string> userIds,
+            DateTime from,
+            DateTime to)
+        {
+            List<OapiAttendanceListResponse.RecordresultDomain> results = new List<OapiAttendanceListResponse.RecordresultDomain>();
+
+            while(from < to)
+            {
+                DateTime tempTo = to;
+                if(from.AddDays(7) < to)
+                {
+                    tempTo = from.AddDays(7);
+                }
+
+                results.AddRange(GetAttendanceRecordsCore(accessToken, userIds, from, tempTo));
+                from = tempTo;
+            }
+
+            return results;
+        }
+
+        private static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecordsCore(
+            string accessToken,
             List<string> userIds,
             DateTime from,
             DateTime to)
@@ -68,7 +98,7 @@ namespace DDIntegration
                     throw new Exception("获取打卡数据失败，错误信息: " + response.Errmsg);
                 }
 
-                if(response.Recordresult == null)
+                if (response.Recordresult == null)
                 {
                     break;
                 }
