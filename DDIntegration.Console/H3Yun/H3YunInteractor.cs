@@ -37,9 +37,15 @@ namespace DDIntegration
                 return new DateTime(startWorkDate.Year, startWorkDate.Month, startWorkDate.Day);
             }
 
-            if (!string.IsNullOrEmpty(StartSyncWorkDateStr))
+            try
             {
-                return DateTime.Parse(StartSyncWorkDateStr);
+                if (!string.IsNullOrEmpty(StartSyncWorkDateStr))
+                {
+                    return DateTime.Parse(StartSyncWorkDateStr);
+                }
+            }
+            catch
+            {
             }
 
             DateTime now = DateTime.Now;
@@ -97,12 +103,15 @@ namespace DDIntegration
                 h3Attendances.Add(H3YunAttendance.ConvertFrom(record));
             }
 
-            //h3Attendances = h3Attendances.GetRange(0, 10);
+            CreateAttendancesCore(h3Attendances);
+        }
 
+        private static void CreateAttendancesCore(List<H3YunAttendance> h3Attendances)
+        {
             CreateAttendanceRequest request = new CreateAttendanceRequest();
             request.ActionName = "CreateBizObjects";
             request.SchemaCode = SchemaCode_Attendance;
-            foreach(H3YunAttendance item in h3Attendances)
+            foreach (H3YunAttendance item in h3Attendances)
             {
                 request.BizObjectArray.Add(JsonConvert.SerializeObject(item));
             }

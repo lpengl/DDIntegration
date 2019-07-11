@@ -31,7 +31,7 @@ namespace DDIntegration
             DateTime now = DateTime.Now;
             DateTime to = new DateTime(now.Year, now.Month, now.Day);
             to = to.AddSeconds(-1);
-            DateTime from = startDate;
+            DateTime from = new DateTime(startDate.Year, startDate.Month, startDate.Day);
             if(from > to)
             {
                 from = new DateTime(to.Year, to.Month, to.Day);

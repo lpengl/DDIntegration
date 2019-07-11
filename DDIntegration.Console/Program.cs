@@ -15,31 +15,23 @@ namespace DDIntegration
             while (true)
             {
                 DateTime now = DateTime.Now;
-                DateTime startSyncWorkDate;
-                if (_firstSync)
-                {
-                    startSyncWorkDate = H3YunInteractor.GetStartSyncWorkDate();
-                }
-                else
-                {
-                    startSyncWorkDate = now.AddDays(-1);
-                }
 
                 try
                 {
                     if (_lastSyncAttendanceTime == DateTime.MinValue ||
-                        now > _lastSyncAttendanceTime && now.Day != _lastSyncAttendanceTime.Day)
+                        _lastSyncAttendanceTime < now && _lastSyncAttendanceTime.Day != now.Day)
                     {
+                        DateTime startSyncWorkDate = _firstSync ? H3YunInteractor.GetStartSyncWorkDate() : now.AddDays(-1);
+
                         List<OapiAttendanceListResponse.RecordresultDomain> attendances = DDInteractor.GetAttendanceRecords(startSyncWorkDate);
                         H3YunInteractor.CreateAttendances(attendances);
+
                         _firstSync = false;
                     }
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
-                    Thread.Sleep(60 * 60 * 1000);
-                    continue;
                 }
 
                 _lastSyncAttendanceTime = now;
