@@ -10,6 +10,11 @@ namespace DDIntegration
     public class H3YunBasicPaymentInfo
     {
         /// <summary>
+        /// 
+        /// </summary>
+        public string ObjectId { get; set; }
+
+        /// <summary>
         /// 氚云UserId
         /// </summary>
         public string F0000001 { get; set; }
@@ -48,6 +53,10 @@ namespace DDIntegration
                         if(field.Value != null)
                         {
                             result.F0000013 = DateTime.Parse(field.Value);
+                        }
+                        else
+                        {
+                            result.F0000013 = origin;
                         }
                         break;
                 }

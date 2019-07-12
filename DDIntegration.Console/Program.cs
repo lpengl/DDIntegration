@@ -9,14 +9,10 @@ namespace DDIntegration
     {
         private static DateTime _lastSyncAttendanceTime = DateTime.MinValue;
         private static DateTime _lastSyncEmployeeInfoTime = DateTime.MinValue;
-        private static bool _firstSync = true;
 
         static void Main(string[] args)
         {
-            //H3YunInteractor.GetUserIdPair();
-            //H3YunInteractor.GetExistingBasicPaymentInfo();
-            return;
-
+            bool firstSync = true;
             while (true)
             {
                 DateTime now = DateTime.Now;
@@ -26,13 +22,13 @@ namespace DDIntegration
                     if (_lastSyncAttendanceTime == DateTime.MinValue ||
                         _lastSyncAttendanceTime < now && _lastSyncAttendanceTime.Day != now.Day)
                     {
-                        DateTime startSyncWorkDate = _firstSync ? H3YunInteractor.GetStartSyncWorkDate() : now.AddDays(-1);
+                        DateTime startSyncWorkDate = firstSync ? H3YunInteractor.GetStartSyncWorkDate() : now.AddDays(-1);
 
-                        List<OapiAttendanceListResponse.RecordresultDomain> attendances = DDInteractor.GetAttendanceRecords(startSyncWorkDate, _firstSync);
+                        List<OapiAttendanceListResponse.RecordresultDomain> attendances = DDInteractor.GetAttendanceRecords(startSyncWorkDate, firstSync);
 
                         H3YunInteractor.CreateAttendances(attendances);
 
-                        _firstSync = false;
+                        firstSync = false;
                     }
                 }
                 catch (Exception ex)

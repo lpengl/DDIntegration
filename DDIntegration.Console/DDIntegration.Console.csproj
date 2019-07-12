@@ -53,6 +53,8 @@
     <Compile Include="DingDing\KaoQin.cs" />
     <Compile Include="DingDing\ZhiNengRenShi.cs" />
     <Compile Include="H3Yun\GetBasicPaymentInfoResponse.cs" />
+    <Compile Include="H3Yun\GetJieSuanResponse.cs" />
+    <Compile Include="H3Yun\H3YunJieSuan.cs" />
     <Compile Include="H3Yun\H3YunRequest.cs" />
     <Compile Include="H3Yun\GetAttendanceResponse.cs" />
     <Compile Include="H3Yun\GetUserInfoResponse.cs" />
