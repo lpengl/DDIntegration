@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DDIntegration
 {
-    public class GetAttendanceRequest
+    public class H3YunRequest
     {
         public string ActionName { get; set; }
         public string SchemaCode { get; set; }

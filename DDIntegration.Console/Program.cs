@@ -13,6 +13,10 @@ namespace DDIntegration
 
         static void Main(string[] args)
         {
+            //H3YunInteractor.GetUserIdPair();
+            //H3YunInteractor.GetExistingBasicPaymentInfo();
+            return;
+
             while (true)
             {
                 DateTime now = DateTime.Now;
@@ -24,13 +28,9 @@ namespace DDIntegration
                     {
                         DateTime startSyncWorkDate = _firstSync ? H3YunInteractor.GetStartSyncWorkDate() : now.AddDays(-1);
 
-                        Console.WriteLine("开始获取钉钉打卡数据...");
                         List<OapiAttendanceListResponse.RecordresultDomain> attendances = DDInteractor.GetAttendanceRecords(startSyncWorkDate, _firstSync);
-                        Console.WriteLine("获取钉钉打卡数据结束！");
 
-                        Console.WriteLine("同步打卡数据到氚云...");
                         H3YunInteractor.CreateAttendances(attendances);
-                        Console.WriteLine("同步打卡数据结束！");
 
                         _firstSync = false;
                     }
@@ -45,13 +45,8 @@ namespace DDIntegration
                     if(_lastSyncEmployeeInfoTime == DateTime.MinValue ||
                         _lastSyncEmployeeInfoTime.AddHours(4) < now)
                     {
-                        Console.WriteLine("开始获取钉钉花名册数据...");
                         List<OapiSmartworkHrmEmployeeListResponse.EmpFieldInfoVODomain> employeesInfo = DDInteractor.GetEmployeesInfo();
-                        Console.WriteLine("获取钉钉花名册数据结束！");
-
-                        Console.WriteLine("同步花名册数据到氚云...");
-                        //H3YunInteractor.SyncEmployeesInfo(employeesInfo);
-                        Console.WriteLine("同步花名册数据结束！");
+                        H3YunInteractor.SyncBasicPaymentInfo(employeesInfo);
                     }
                 }
                 catch(Exception ex)

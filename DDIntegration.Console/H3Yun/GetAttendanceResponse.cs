@@ -6,12 +6,8 @@ using System.Threading.Tasks;
 
 namespace DDIntegration
 {
-    public class GetAttendanceResponse
+    public class GetAttendanceResponse : H3YunResponse
     {
-        public int DataType { get; set; }
-        public string ErrorMessage { get; set; }
-        public bool Logined { get; set; }
-        public bool Successful { get; set; }
         public GetAttendanceResponseReturnData ReturnData { get; set; }
     }
 

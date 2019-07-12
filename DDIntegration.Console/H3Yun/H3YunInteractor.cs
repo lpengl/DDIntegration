@@ -14,6 +14,7 @@ namespace DDIntegration
     class H3YunInteractor
     {
         private const string H3YunOapiUrl = "https://www.h3yun.com/OpenApi/Invoke";
+        private const string AppCode = "A0fd9ef65c4344aa5aa356d54e9f54569";
         private const string SchemaCode_Attendance = "D001359Attendance";
         private const string SchemaCode_BasicPayment = "po9rfqcun250lovwkwjxkqvu6";
         private static readonly string H3EngineCode = ConfigurationManager.AppSettings["H3EngineCode"];
@@ -57,7 +58,7 @@ namespace DDIntegration
         {
             try
             {
-                GetAttendanceRequest request = new GetAttendanceRequest();
+                H3YunRequest request = new H3YunRequest();
                 request.ActionName = "LoadBizObjects";
                 request.SchemaCode = SchemaCode_Attendance;
                 request.Filter = "{\"FromRowNum\":0,\"ToRowNum\":1,\"RequireCount\":true,\"SortByCollection\":\"[]\",\"ReturnItems\":[],\"Matcher\":{\"Type\":\"And\",\"Matchers\":[]}}";
@@ -152,17 +153,26 @@ namespace DDIntegration
             }
         }
 
-        public static void SyncEmployeesInfo(List<OapiSmartworkHrmEmployeeListResponse.EmpFieldInfoVODomain> employees)
+        public static void SyncBasicPaymentInfo(List<OapiSmartworkHrmEmployeeListResponse.EmpFieldInfoVODomain> employees)
         {
             if(employees == null || employees.Count == 0)
             {
                 return;
             }
 
+            Dictionary<string, string> userIdPair = GetUserIdPair();
+            List<H3YunBasicPaymentInfo> existingPayments = GetExistingBasicPaymentInfo();
+
             List<H3YunBasicPaymentInfo> paymentsInfo = new List<H3YunBasicPaymentInfo>();
+            H3YunBasicPaymentInfo payment;
             foreach (OapiSmartworkHrmEmployeeListResponse.EmpFieldInfoVODomain emp in employees)
             {
-                paymentsInfo.Add(H3YunBasicPaymentInfo.ConvertFrom(emp));
+                payment = H3YunBasicPaymentInfo.ConvertFrom(emp);
+                if (userIdPair.ContainsKey(payment.F0000002))
+                {
+                    payment.F0000001 = userIdPair[payment.F0000002];
+                }
+                paymentsInfo.Add(payment);
             }
 
             int size = 200;
@@ -174,12 +184,40 @@ namespace DDIntegration
                 {
                     takeCount = employees.Count - offset;
                 }
-                SyncEmpolyeesInfoCore(paymentsInfo.GetRange(offset, takeCount));
+                SyncBasicPaymentInfoCore(paymentsInfo.GetRange(offset, takeCount), existingPayments);
             }
         }
 
-        private static void SyncEmpolyeesInfoCore(List<H3YunBasicPaymentInfo> payments)
+        private static void SyncBasicPaymentInfoCore(
+            List<H3YunBasicPaymentInfo> payments, 
+            List<H3YunBasicPaymentInfo> existingPayments)
         {
+            List<H3YunBasicPaymentInfo> paymentToCreate = new List<H3YunBasicPaymentInfo>();
+            List<H3YunBasicPaymentInfo> paymentToUpdate = new List<H3YunBasicPaymentInfo>();
+
+            foreach(H3YunBasicPaymentInfo item in payments)
+            {
+                if(existingPayments.Exists(p => p.F0000002 == item.F0000002))
+                {
+                    paymentToUpdate.Add(item);
+                }
+                else
+                {
+                    paymentToCreate.Add(item);
+                }
+            }
+
+            CreateBasicPaymentInfo(paymentToCreate);
+            UpdateBasicPaymentInfo(paymentToUpdate);
+        }
+
+        private static void CreateBasicPaymentInfo(List<H3YunBasicPaymentInfo> payments)
+        {
+            if(payments == null || payments.Count == 0)
+            {
+                return;
+            }
+
             H3YunBulkCreateRequest request = new H3YunBulkCreateRequest();
             request.ActionName = "CreateBizObjects";
             request.SchemaCode = SchemaCode_BasicPayment;
@@ -208,8 +246,134 @@ namespace DDIntegration
             }
             else
             {
-                Console.WriteLine("插入打卡数据到氚云失败！");
+                Console.WriteLine("插入基础薪资到氚云失败！");
             }
+        }
+
+        private static void UpdateBasicPaymentInfo(List<H3YunBasicPaymentInfo> payments)
+        {
+            if(payments == null || payments.Count == 0)
+            {
+                return;
+            }
+
+            UpdateBasicPaymentRequest updateRequest = new UpdateBasicPaymentRequest();
+            updateRequest.ActionName = "UpdateBizObject";
+            updateRequest.SchemaCode = SchemaCode_BasicPayment;
+
+            foreach(H3YunBasicPaymentInfo item in payments)
+            {
+                try
+                {
+
+                }
+                catch
+                {
+
+                }
+            }
+        }
+
+        private static Dictionary<string, string> GetUserIdPair()
+        {
+            Dictionary<string, string> userIdPair = new Dictionary<string, string>();
+
+            Dictionary<string, object> dicParams = new Dictionary<string, object>();
+            dicParams.Add("ActionName", "OnInvoke");
+            dicParams.Add("Controller", "H3InfoController"); 
+            dicParams.Add("AppCode", AppCode);
+
+            string postData = JsonConvert.SerializeObject(dicParams);
+
+            HttpContent httpContent = new StringContent(postData);
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            httpContent.Headers.ContentType.CharSet = "utf-8";
+            httpContent.Headers.Add("EngineCode", H3EngineCode);
+            httpContent.Headers.Add("EngineSecret", H3Secret);
+
+            HttpClient httpClient = new HttpClient();
+
+            HttpResponseMessage response = httpClient.PostAsync(H3YunOapiUrl, httpContent).Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                string result = response.Content.ReadAsStringAsync().Result;
+                try
+                {
+                    GetUserInfoResponse userInfoResponse = JsonConvert.DeserializeObject<GetUserInfoResponse>(result);
+                    if(userInfoResponse != null && userInfoResponse.ReturnData  != null)
+                    {
+                        string pair = userInfoResponse.ReturnData["UserIdPair"];
+                        if (!string.IsNullOrEmpty(pair))
+                        {
+                            userIdPair = JsonConvert.DeserializeObject<Dictionary<string, string>>(pair);
+                            List<string> keys = userIdPair.Keys.ToList<string>();
+                            foreach(string key in keys)
+                            {
+                                if (!string.IsNullOrEmpty(userIdPair[key]))
+                                {
+                                    if(userIdPair[key].IndexOf('.') > 0)
+                                    {
+                                        userIdPair[key] = userIdPair[key].Split('.')[0];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+            else
+            {
+                Console.WriteLine("获取用户信息失败！");
+            }
+
+            return userIdPair;
+        }
+
+        private static List<H3YunBasicPaymentInfo> GetExistingBasicPaymentInfo()
+        {
+            try
+            {
+                H3YunRequest request = new H3YunRequest();
+                request.ActionName = "LoadBizObjects";
+                request.SchemaCode = SchemaCode_BasicPayment;
+                request.Filter = "{\"FromRowNum\":0,\"ToRowNum\":500,\"RequireCount\":true,\"SortByCollection\":\"[]\",\"ReturnItems\":[],\"Matcher\":{\"Type\":\"And\",\"Matchers\":[]}}";
+                string postData = JsonConvert.SerializeObject(request);
+                HttpContent httpContent = new StringContent(postData);
+                httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                httpContent.Headers.ContentType.CharSet = "utf-8";
+                httpContent.Headers.Add("EngineCode", H3EngineCode);
+                httpContent.Headers.Add("EngineSecret", H3Secret);
+
+                HttpClient httpClient = new HttpClient();
+                HttpResponseMessage response = httpClient.PostAsync(H3YunOapiUrl, httpContent).Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    string result = response.Content.ReadAsStringAsync().Result;
+                    try
+                    {
+                        GetBasicPaymentInfoResponse payments = JsonConvert.DeserializeObject<GetBasicPaymentInfoResponse>(result);
+                        if(payments != null && payments.ReturnData != null)
+                        {
+                            return payments.ReturnData.BizObjectArray;
+                        }
+                    }
+                    catch
+                    {
+                        Console.WriteLine(result);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            return null;
         }
     }
 }
