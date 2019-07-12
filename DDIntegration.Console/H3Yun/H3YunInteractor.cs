@@ -22,6 +22,71 @@ namespace DDIntegration
         private static readonly string H3Secret = ConfigurationManager.AppSettings["H3Secret"];
         private static readonly string StartSyncWorkDateStr = ConfigurationManager.AppSettings["StartSyncWorkDate"];
 
+        public static bool NeedSyncAttendanceData()
+        {
+            DateTime now = DateTime.Now;
+            if (!string.IsNullOrEmpty(StartSyncWorkDateStr))
+            {
+                // 如果配置的时间在当前时间之后，那不同步考勤数据
+                DateTime startSyncWorkDate = DateTime.Parse(StartSyncWorkDateStr);
+                if(now < startSyncWorkDate)
+                {
+                    return false;
+                }
+            }
+
+            // 如果在每月3号之前，那不同步考勤数据，因为可能有些还没补卡
+            if(now.Day < 3)
+            {
+                return false;
+            }
+
+            Dictionary<string, object> dicParams = new Dictionary<string, object>();
+            dicParams.Add("ActionName", "OnInvoke");
+            dicParams.Add("Controller", "H3InfoController");
+            dicParams.Add("AppCode", AppCode);
+            dicParams.Add("Command", "CheckNeedSyncAttendanceData");
+
+            string postData = JsonConvert.SerializeObject(dicParams);
+
+            HttpContent httpContent = new StringContent(postData);
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            httpContent.Headers.ContentType.CharSet = "utf-8";
+            httpContent.Headers.Add("EngineCode", H3EngineCode);
+            httpContent.Headers.Add("EngineSecret", H3Secret);
+
+            HttpClient httpClient = new HttpClient();
+
+            HttpResponseMessage response = httpClient.PostAsync(H3YunOapiUrl, httpContent).Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                string result = response.Content.ReadAsStringAsync().Result;
+                try
+                {
+                    H3YunCommonResponse commonResponse = JsonConvert.DeserializeObject<H3YunCommonResponse>(result);
+                    if (commonResponse != null && commonResponse.ReturnData != null)
+                    {
+                        string needSyncAttendanceData = commonResponse.ReturnData["NeedSyncAttendanceData"];
+                        if(needSyncAttendanceData == "true")
+                        {
+                            return true;
+                        }
+                        return false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+            else
+            {
+                Console.WriteLine("获取用户信息失败！");
+            }
+            return false;
+        }
+
         /// <summary>
         /// 获取要读取考勤的开始时间，先从氚云获取创建时间最新的数据的工作日，
         /// 如果获取不到，则拿配置文件中的值，
@@ -307,7 +372,7 @@ namespace DDIntegration
             }
         }
 
-        public static bool NeedUpdateBasicPaymentInfo()
+        private static bool NeedUpdateBasicPaymentInfo()
         {
             try
             {
@@ -359,6 +424,7 @@ namespace DDIntegration
             dicParams.Add("ActionName", "OnInvoke");
             dicParams.Add("Controller", "H3InfoController"); 
             dicParams.Add("AppCode", AppCode);
+            dicParams.Add("Command", "GetUserIdPair");
 
             string postData = JsonConvert.SerializeObject(dicParams);
 
@@ -377,7 +443,7 @@ namespace DDIntegration
                 string result = response.Content.ReadAsStringAsync().Result;
                 try
                 {
-                    GetUserInfoResponse userInfoResponse = JsonConvert.DeserializeObject<GetUserInfoResponse>(result);
+                    H3YunCommonResponse userInfoResponse = JsonConvert.DeserializeObject<H3YunCommonResponse>(result);
                     if(userInfoResponse != null && userInfoResponse.ReturnData  != null)
                     {
                         string pair = userInfoResponse.ReturnData["UserIdPair"];

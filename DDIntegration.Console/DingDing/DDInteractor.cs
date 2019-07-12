@@ -9,11 +9,11 @@ namespace DDIntegration
 {
     class DDInteractor
     {
-        public static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecords(DateTime startDate, bool firstSync)
+        public static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecords(DateTime startDate)
         {
             string accessToken = Common.GetAccessToken();
             List<string> userIds = TongXunLu.GetAllUsers(accessToken);
-            return KaoQin.GetAttendanceRecords(accessToken, userIds, startDate, firstSync);
+            return KaoQin.GetAttendanceRecords(accessToken, userIds, startDate);
         }
 
         public static List<OapiSmartworkHrmEmployeeListResponse.EmpFieldInfoVODomain> GetEmployeesInfo()

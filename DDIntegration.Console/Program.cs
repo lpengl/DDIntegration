@@ -12,7 +12,6 @@ namespace DDIntegration
 
         static void Main(string[] args)
         {
-            bool firstSync = true;
             while (true)
             {
                 DateTime now = DateTime.Now;
@@ -20,15 +19,16 @@ namespace DDIntegration
                 try
                 {
                     if (_lastSyncAttendanceTime == DateTime.MinValue ||
-                        _lastSyncAttendanceTime < now && _lastSyncAttendanceTime.Day != now.Day)
+                        _lastSyncAttendanceTime.AddMinutes(30) < now)
                     {
-                        DateTime startSyncWorkDate = firstSync ? H3YunInteractor.GetStartSyncWorkDate() : now.AddDays(-1);
-
-                        List<OapiAttendanceListResponse.RecordresultDomain> attendances = DDInteractor.GetAttendanceRecords(startSyncWorkDate, firstSync);
-
-                        H3YunInteractor.CreateAttendances(attendances);
-
-                        firstSync = false;
+                        bool needSyncAttendance = H3YunInteractor.NeedSyncAttendanceData();
+                        if (needSyncAttendance)
+                        {
+                            DateTime lastMonthNow = now.AddMonths(-1);
+                            DateTime startSyncWorkDate = new DateTime(lastMonthNow.Year, lastMonthNow.Month, 1);
+                            List<OapiAttendanceListResponse.RecordresultDomain> attendances = DDInteractor.GetAttendanceRecords(startSyncWorkDate);
+                            H3YunInteractor.CreateAttendances(attendances);
+                        }
                     }
                 }
                 catch (Exception ex)

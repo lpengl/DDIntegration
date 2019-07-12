@@ -3,9 +3,7 @@ using DingTalk.Api.Request;
 using DingTalk.Api.Response;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace DDIntegration
 {
@@ -19,8 +17,7 @@ namespace DDIntegration
         public static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecords(
             string accessToken, 
             List<string> userIds,
-            DateTime startDate,
-            bool firstSync)
+            DateTime startDate)
         {
             if(userIds == null || userIds.Count == 0)
             {
@@ -29,21 +26,8 @@ namespace DDIntegration
 
             List<OapiAttendanceListResponse.RecordresultDomain> results = new List<OapiAttendanceListResponse.RecordresultDomain>();
 
-            DateTime now = DateTime.Now;
-            DateTime to = new DateTime(now.Year, now.Month, now.Day);
-            to = to.AddSeconds(-1);
-            DateTime from = new DateTime(startDate.Year, startDate.Month, startDate.Day);
-            if(from > to)
-            {
-                return results;
-            }
-
-            if (!firstSync)
-            {
-                // 如果不是程序启动的第一次同步，获取传进来的起始时间的前三天，主要是为了拿到补卡数据
-                DateTime tempFrom = startDate.AddDays(-3);
-                from = new DateTime(tempFrom.Year, tempFrom.Month, tempFrom.Day);
-            }
+            DateTime from = startDate;
+            DateTime to = from.AddMonths(1).AddSeconds(-1);
 
             int takeUserCount = 50;
             for(int i = 0; i < userIds.Count; i = i + 50)
@@ -53,27 +37,6 @@ namespace DDIntegration
                     takeUserCount = userIds.Count - i;
                 }
                 results.AddRange(GetAttendanceRecords(accessToken, userIds.GetRange(i, takeUserCount), from, to));
-            }
-
-            if (!firstSync)
-            {
-                results = results.Where(r => {
-                    bool sourceTypeIsApprove = false;
-                    if (!string.IsNullOrEmpty(r.SourceType) && r.SourceType.ToUpper() == "APPROVE")
-                    {
-                        sourceTypeIsApprove = true;
-                    }
-
-                    bool isCurrentDay = false;
-                    DateTime origin = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-                    DateTime workDate = origin.AddMilliseconds(long.Parse(r.WorkDate)).ToLocalTime();
-                    if (workDate.Day == to.Day)
-                    {
-                        isCurrentDay = true;
-                    }
-
-                    return sourceTypeIsApprove || isCurrentDay;
-                }).ToList();
             }
             
             return results;
@@ -96,6 +59,7 @@ namespace DDIntegration
                 }
 
                 results.AddRange(GetAttendanceRecordsCore(accessToken, userIds, from, tempTo));
+                Thread.Sleep(1000);
                 from = tempTo;
             }
 
