@@ -226,7 +226,7 @@ namespace DDIntegration
                 return;
             }
 
-            Dictionary<string, string> userIdPair = GetUserIdPair();
+            Dictionary<string, List<string>> userIdPair = GetUserIdPair();
             List<H3YunBasicPaymentInfo> existingPayments = GetExistingBasicPaymentInfo();
             if(existingPayments == null)
             {
@@ -240,7 +240,8 @@ namespace DDIntegration
                 payment = H3YunBasicPaymentInfo.ConvertFrom(emp);
                 if (userIdPair.ContainsKey(payment.F0000002))
                 {
-                    payment.F0000001 = userIdPair[payment.F0000002];
+                    payment.F0000001 = userIdPair[payment.F0000002][0];
+                    payment.F0001366 = userIdPair[payment.F0000002][1];
                 }
                 paymentsInfo.Add(payment);
             }
@@ -416,9 +417,9 @@ namespace DDIntegration
             return false;
         }
 
-        private static Dictionary<string, string> GetUserIdPair()
+        private static Dictionary<string, List<string>> GetUserIdPair()
         {
-            Dictionary<string, string> userIdPair = new Dictionary<string, string>();
+            Dictionary<string, List<string>> userIdPair = new Dictionary<string, List<string>>();
 
             Dictionary<string, object> dicParams = new Dictionary<string, object>();
             dicParams.Add("ActionName", "OnInvoke");
@@ -452,7 +453,7 @@ namespace DDIntegration
                             return userIdPair;
                         }
 
-                        Dictionary<string, string> returnData = JsonConvert.DeserializeObject<Dictionary<string, string>>(pair);
+                        Dictionary<string, List<string>> returnData = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(pair);
                         if(returnData == null)
                         {
                             return userIdPair;
@@ -463,7 +464,11 @@ namespace DDIntegration
                             string innerKey = key.IndexOf('.') > 0 ? key.Split('.')[0] : key;
                             if (!userIdPair.ContainsKey(innerKey))
                             {
-                                userIdPair.Add(innerKey, returnData[key]);
+                                userIdPair[innerKey] = new List<string>();
+                                if(returnData[key] != null)
+                                {
+                                    userIdPair[innerKey].AddRange(returnData[key]);
+                                }
                             }
                         }
                         return userIdPair;

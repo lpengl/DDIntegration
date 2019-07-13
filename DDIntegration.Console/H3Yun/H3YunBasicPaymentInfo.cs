@@ -34,6 +34,11 @@ namespace DDIntegration
         /// </summary>
         public DateTime F0000013 { get; set; }
 
+        /// <summary>
+        /// 所在部门
+        /// </summary>
+        public string F0001366 { get; set; }
+
         public static H3YunBasicPaymentInfo ConvertFrom(EmpFieldInfoVODomain empInfo)
         {
             H3YunBasicPaymentInfo result = new H3YunBasicPaymentInfo();
