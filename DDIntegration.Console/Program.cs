@@ -34,7 +34,7 @@ namespace DDIntegration
 
         static DateTime GetEndDate(DateTime startDate)
         {
-            return startDate.AddMonths(2).AddSeconds(-1);
+            return startDate.AddMonths(1).AddSeconds(-1);
         }
 
         static void SyncAttendanceData(DateTime now)
