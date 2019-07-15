@@ -18,6 +18,7 @@ namespace DDIntegration
         private const string SchemaCode_Attendance = "D001359Attendance";
         private const string SchemaCode_BasicPayment = "po9rfqcun250lovwkwjxkqvu6";
         private const string SchemaCode_JieSuan = "D001359a415593cd1d742569b928cf71a00c590";
+        private const string SchemaCode_QingJia = "D001359a5baeebc330743b09f449d32658f5f29";
         private static readonly string H3EngineCode = ConfigurationManager.AppSettings["H3EngineCode"];
         private static readonly string H3Secret = ConfigurationManager.AppSettings["H3Secret"];
         private static readonly string StartSyncWorkDateStr = ConfigurationManager.AppSettings["StartSyncWorkDate"];
@@ -77,12 +78,12 @@ namespace DDIntegration
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    Console.WriteLine("获取是否同步信息失败！" + ex.Message);
                 }
             }
             else
             {
-                Console.WriteLine("获取用户信息失败！");
+                Console.WriteLine("获取是否同步信息失败！");
             }
             return false;
         }
@@ -173,7 +174,6 @@ namespace DDIntegration
             }
             
             int size = 200;
-
             for(int offset = 0; offset < h3Attendances.Count; offset = offset + size)
             {
                 int takeCount = size;
@@ -211,11 +211,53 @@ namespace DDIntegration
             if (response.IsSuccessStatusCode)
             {
                 string result = response.Content.ReadAsStringAsync().Result;
-                Console.WriteLine(result);
             }
             else
             {
-                Console.WriteLine("插入打卡数据到氚云失败！");
+                throw new Exception("插入打卡数据到氚云失败！");
+            }
+        }
+
+        public static void SyncLeaveStatus(List<LeaveStatus> leaveStatus)
+        {
+            if(leaveStatus == null || leaveStatus.Count == 0)
+            {
+                return;
+            }
+
+            List<H3YunLeaveStatus> h3LeaveStatus = new List<H3YunLeaveStatus>();
+            foreach (LeaveStatus record in leaveStatus)
+            {
+                h3LeaveStatus.Add(H3YunLeaveStatus.ConvertFrom(record));
+            }
+
+            H3YunBulkCreateRequest request = new H3YunBulkCreateRequest();
+            request.ActionName = "CreateBizObjects";
+            request.SchemaCode = SchemaCode_QingJia;
+            foreach (H3YunLeaveStatus item in h3LeaveStatus)
+            {
+                request.BizObjectArray.Add(JsonConvert.SerializeObject(item));
+            }
+            request.IsSubmit = true;
+
+            string postData = JsonConvert.SerializeObject(request);
+
+            HttpContent httpContent = new StringContent(postData);
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            httpContent.Headers.ContentType.CharSet = "utf-8";
+            httpContent.Headers.Add("EngineCode", H3EngineCode);
+            httpContent.Headers.Add("EngineSecret", H3Secret);
+
+            HttpClient httpClient = new HttpClient();
+            HttpResponseMessage response = httpClient.PostAsync(H3YunOapiUrl, httpContent).Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                string result = response.Content.ReadAsStringAsync().Result;
+            }
+            else
+            {
+                throw new Exception("插入打卡数据到氚云失败！");
             }
         }
 

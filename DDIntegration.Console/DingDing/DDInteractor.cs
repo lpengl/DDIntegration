@@ -9,25 +9,29 @@ namespace DDIntegration
 {
     class DDInteractor
     {
-        public static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecords(DateTime startDate)
+        public static List<string> GetAllUserIds(string accessToken)
         {
-            string accessToken = Common.GetAccessToken();
-            List<string> userIds = TongXunLu.GetAllUsers(accessToken);
-            return KaoQin.GetAttendanceRecords(accessToken, userIds, startDate);
+            return TongXunLu.GetAllUsers(accessToken);
         }
 
-        public static List<OapiSmartworkHrmEmployeeListResponse.EmpFieldInfoVODomain> GetEmployeesInfo()
+        public static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecordsInfo(
+            string accessToken, 
+            List<string> userIds,
+            DateTime startDate,
+            DateTime endDate)
         {
-            string accessToken = Common.GetAccessToken();
+            return KaoQin.GetAttendanceRecordsInfo(accessToken, userIds, startDate, endDate);
+        }
+
+        public static List<OapiSmartworkHrmEmployeeListResponse.EmpFieldInfoVODomain> GetEmployeesInfo(string accessToken)
+        {
             List<string> userIds = TongXunLu.GetAllUsers(accessToken);
             return ZhiNengRenShi.GetEmployeesInfo(accessToken, userIds);
         }
 
-        public static void GetLeaveStatus()
+        public static List<LeaveStatus> GetLeaveStatus(string accessToken, List<string> userIds, DateTime startDate, DateTime endDate)
         {
-            string accessToken = Common.GetAccessToken();
-            List<string> userIds = TongXunLu.GetAllUsers(accessToken);
-            KaoQin.GetLeaveStatus(accessToken, userIds);
+            return KaoQin.GetLeaveStatus(accessToken, userIds, startDate, endDate);
         }
     }
 }

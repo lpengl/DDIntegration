@@ -1,6 +1,7 @@
 ﻿using DingTalk.Api;
 using DingTalk.Api.Request;
 using DingTalk.Api.Response;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -15,21 +16,19 @@ namespace DDIntegration
         private const string ListAttendanceRecordUrl = "https://oapi.dingtalk.com/attendance/listRecord";
         private const string GetLeaveStatusUrl = "https://oapi.dingtalk.com/topapi/attendance/getleavestatus";
 
-        public static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecords(
+        public static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecordsInfo(
             string accessToken, 
             List<string> userIds,
-            DateTime startDate)
+            DateTime startDate,
+            DateTime endDate)
         {
-            if(userIds == null || userIds.Count == 0)
-            {
-                return null;
-            }
-
             List<OapiAttendanceListResponse.RecordresultDomain> results = new List<OapiAttendanceListResponse.RecordresultDomain>();
 
-            DateTime from = startDate;
-            DateTime to = from.AddMonths(1).AddSeconds(-1);
-
+            if(userIds == null || userIds.Count == 0)
+            {
+                return results;
+            }
+            
             int takeUserCount = 50;
             for(int i = 0; i < userIds.Count; i = i + 50)
             {
@@ -37,7 +36,7 @@ namespace DDIntegration
                 {
                     takeUserCount = userIds.Count - i;
                 }
-                results.AddRange(GetAttendanceRecords(accessToken, userIds.GetRange(i, takeUserCount), from, to));
+                results.AddRange(GetAttendanceRecords(accessToken, userIds.GetRange(i, takeUserCount), startDate, endDate));
             }
             
             return results;
@@ -46,22 +45,22 @@ namespace DDIntegration
         private static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecords(
             string accessToken, 
             List<string> userIds,
-            DateTime from,
-            DateTime to)
+            DateTime startDate,
+            DateTime endDate)
         {
             List<OapiAttendanceListResponse.RecordresultDomain> results = new List<OapiAttendanceListResponse.RecordresultDomain>();
 
-            while(from < to)
+            while(startDate < endDate)
             {
-                DateTime tempTo = to;
-                if(from.AddDays(7) < to)
+                DateTime tempTo = endDate;
+                if(startDate.AddDays(7) < endDate)
                 {
-                    tempTo = from.AddDays(7);
+                    tempTo = startDate.AddDays(7);
                 }
 
-                results.AddRange(GetAttendanceRecordsCore(accessToken, userIds, from, tempTo));
+                results.AddRange(GetAttendanceRecordsCore(accessToken, userIds, startDate, tempTo));
                 Thread.Sleep(1000);
-                from = tempTo;
+                startDate = tempTo;
             }
 
             return results;
@@ -123,27 +122,74 @@ namespace DDIntegration
             return sourceTypeIsApprove || isCurrentDay;
         }
 
-        public static void GetLeaveStatus(
+        public static List<LeaveStatus> GetLeaveStatus(
             string accessToken,
-            List<string> userIds)
+            List<string> userIds,
+            DateTime startDate,
+            DateTime endDate)
         {
-            DateTime start = new DateTime(2019, 5, 1);
-            DateTime end = new DateTime(2019, 7, 13);
+            List<LeaveStatus> results = new List<LeaveStatus>();
 
+            if (userIds == null || userIds.Count == 0)
+            {
+                return results;
+            }
+
+            int takeUserCount = 100;
+            for (int i = 0; i < userIds.Count; i = i + 100)
+            {
+                if (i + takeUserCount > userIds.Count)
+                {
+                    takeUserCount = userIds.Count - i;
+                }
+                results.AddRange(GetLeaveStatusCore(accessToken, userIds.GetRange(i, takeUserCount), startDate, endDate));
+            }
+
+
+            return results;
+        }
+
+        private static List<LeaveStatus> GetLeaveStatusCore(
+            string accessToken,
+            List<string> userIds,
+            DateTime startDate,
+            DateTime endDate)
+        {
+            List<LeaveStatus> results = new List<LeaveStatus>();
+            
             DefaultDingTalkClient client = new DefaultDingTalkClient(GetLeaveStatusUrl);
             OapiAttendanceGetleavestatusRequest req = new OapiAttendanceGetleavestatusRequest();
             req.UseridList = string.Join(",", userIds);
-            req.StartTime = GetUnixTimeSpan(start);
-            req.EndTime = GetUnixTimeSpan(end);
-            req.Offset = 0L;
-            req.Size = 20L;
-            OapiAttendanceGetleavestatusResponse rsp = client.Execute(req, accessToken);
-            
-        }
+            req.StartTime = Utility.GetUnixTimeSpan(startDate);
+            req.EndTime = Utility.GetUnixTimeSpan(endDate);
 
-        private static long GetUnixTimeSpan(DateTime dateTime)
-        {
-            return (dateTime.ToUniversalTime().Ticks - 621355968000000000) / 10000;
+            long offset = 0L;
+            long limit = 20L;
+            while (true)
+            {
+                req.Offset = offset;
+                req.Size = limit;
+                OapiAttendanceGetleavestatusResponse rsp = client.Execute(req, accessToken);
+
+                if (rsp.Errcode != 0)
+                {
+                    throw new Exception("获取钉钉请假数据失败，错误信息：" + rsp.Errmsg);
+                }
+                
+                LeaveStatusResponse leaveResult = JsonConvert.DeserializeObject<LeaveStatusResponse>(rsp.Body);
+                if(leaveResult == null || leaveResult.result == null || leaveResult.result.leave_status == null)
+                {
+                    break;
+                }
+
+                results.AddRange(leaveResult.result.leave_status);
+                if (!leaveResult.result.has_more)
+                {
+                    break;
+                }
+            }
+
+            return results;
         }
     }
 }

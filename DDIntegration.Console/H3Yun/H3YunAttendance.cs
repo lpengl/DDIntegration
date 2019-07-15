@@ -92,15 +92,15 @@ namespace DDIntegration
             result.F0000002 = record.GroupId.ToString();
             result.F0000003 = record.PlanId.ToString();
             result.F0000004 = record.RecordId.ToString();
-            result.F0000005 = origin.AddMilliseconds(long.Parse(record.WorkDate)).ToLocalTime();
+            result.F0000005 = Utility.ParseTime(record.WorkDate);
             result.F0000006 = record.UserId;
             result.F0000007 = GetCheckType(record.CheckType);
             result.F0000008 = GetTimeResult(record.TimeResult);
             result.F0000009 = GetLocationResult(record.LocationResult);
             result.F0000010 = record.ApproveId.ToString();
             result.F0000011 = record.ProcInstId;
-            result.F0000012 = origin.AddMilliseconds(long.Parse(record.BaseCheckTime)).ToLocalTime();
-            result.F0000013 = origin.AddMilliseconds(long.Parse(record.UserCheckTime)).ToLocalTime();
+            result.F0000012 = Utility.ParseTime(record.BaseCheckTime);
+            result.F0000013 = Utility.ParseTime(record.UserCheckTime);
             result.F0000014 = GetSourceType(record.SourceType);
 
             return result;

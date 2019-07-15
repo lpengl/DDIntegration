@@ -51,10 +51,12 @@
     <Compile Include="DingDing\Common.cs" />
     <Compile Include="DingDing\DDInteractor.cs" />
     <Compile Include="DingDing\KaoQin.cs" />
+    <Compile Include="DingDing\LeaveStatusResult.cs" />
     <Compile Include="DingDing\ZhiNengRenShi.cs" />
     <Compile Include="H3Yun\GetBasicPaymentInfoResponse.cs" />
     <Compile Include="H3Yun\GetJieSuanResponse.cs" />
     <Compile Include="H3Yun\H3YunJieSuan.cs" />
+    <Compile Include="H3Yun\H3YunLeaveStatus.cs" />
     <Compile Include="H3Yun\H3YunRequest.cs" />
     <Compile Include="H3Yun\GetAttendanceResponse.cs" />
     <Compile Include="H3Yun\GetUserInfoResponse.cs" />
@@ -67,6 +69,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DingDing\TongXunLu.cs" />
+    <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
