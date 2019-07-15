@@ -22,5 +22,12 @@ namespace DDIntegration
             List<string> userIds = TongXunLu.GetAllUsers(accessToken);
             return ZhiNengRenShi.GetEmployeesInfo(accessToken, userIds);
         }
+
+        public static void GetLeaveStatus()
+        {
+            string accessToken = Common.GetAccessToken();
+            List<string> userIds = TongXunLu.GetAllUsers(accessToken);
+            KaoQin.GetLeaveStatus(accessToken, userIds);
+        }
     }
 }

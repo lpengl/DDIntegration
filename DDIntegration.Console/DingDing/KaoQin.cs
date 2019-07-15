@@ -13,6 +13,7 @@ namespace DDIntegration
     class KaoQin
     {
         private const string ListAttendanceRecordUrl = "https://oapi.dingtalk.com/attendance/listRecord";
+        private const string GetLeaveStatusUrl = "https://oapi.dingtalk.com/topapi/attendance/getleavestatus";
 
         public static List<OapiAttendanceListResponse.RecordresultDomain> GetAttendanceRecords(
             string accessToken, 
@@ -120,6 +121,29 @@ namespace DDIntegration
             DateTime origin = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
             return sourceTypeIsApprove || isCurrentDay;
+        }
+
+        public static void GetLeaveStatus(
+            string accessToken,
+            List<string> userIds)
+        {
+            DateTime start = new DateTime(2019, 5, 1);
+            DateTime end = new DateTime(2019, 7, 13);
+
+            DefaultDingTalkClient client = new DefaultDingTalkClient(GetLeaveStatusUrl);
+            OapiAttendanceGetleavestatusRequest req = new OapiAttendanceGetleavestatusRequest();
+            req.UseridList = string.Join(",", userIds);
+            req.StartTime = GetUnixTimeSpan(start);
+            req.EndTime = GetUnixTimeSpan(end);
+            req.Offset = 0L;
+            req.Size = 20L;
+            OapiAttendanceGetleavestatusResponse rsp = client.Execute(req, accessToken);
+            
+        }
+
+        private static long GetUnixTimeSpan(DateTime dateTime)
+        {
+            return (dateTime.ToUniversalTime().Ticks - 621355968000000000) / 10000;
         }
     }
 }
