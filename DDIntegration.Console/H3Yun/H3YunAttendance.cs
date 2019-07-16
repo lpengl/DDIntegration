@@ -79,6 +79,21 @@ namespace DDIntegration
         /// </summary>
         public string F0000014 { get; set; }
 
+        /// <summary>
+        /// 迟到分钟数
+        /// </summary>
+        public int F0000015 { get; set; }
+
+        /// <summary>
+        /// 早退分钟数
+        /// </summary>
+        public int F0000016 { get; set; }
+
+        /// <summary>
+        /// 结算月份
+        /// </summary>
+        public string F0000017 { get; set; }
+        
         public static H3YunAttendance ConvertFrom(OapiAttendanceListResponse.RecordresultDomain record)
         {
             if(record == null)
@@ -102,6 +117,15 @@ namespace DDIntegration
             result.F0000012 = Utility.ParseTime(record.BaseCheckTime);
             result.F0000013 = Utility.ParseTime(record.UserCheckTime);
             result.F0000014 = GetSourceType(record.SourceType);
+            if(result.F0000008 == "迟到")
+            {
+                result.F0000015 = (result.F0000013 - result.F0000012).Minutes;
+            }
+            else if (result.F0000008 == "早退")
+            {
+                result.F0000016 = (result.F0000012 - result.F0000013).Minutes;
+            }
+            result.F0000017 = result.F0000005.ToString("yyyy-MM");
 
             return result;
         }

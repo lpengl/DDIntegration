@@ -19,24 +19,25 @@ namespace DDIntegration
         private const string SchemaCode_BasicPayment = "po9rfqcun250lovwkwjxkqvu6";
         private const string SchemaCode_JieSuan = "D001359a415593cd1d742569b928cf71a00c590";
         private const string SchemaCode_QingJia = "D001359a5baeebc330743b09f449d32658f5f29";
+        private const string SchemaCode_SingleDayAttendance = "D00135913ef89a50a824741a57df7038537a7ef";
         private static readonly string H3EngineCode = ConfigurationManager.AppSettings["H3EngineCode"];
         private static readonly string H3Secret = ConfigurationManager.AppSettings["H3Secret"];
         private static readonly string StartSyncWorkDateStr = ConfigurationManager.AppSettings["StartSyncWorkDate"];
+
+        #region
 
         public static bool NeedSyncAttendanceData()
         {
             DateTime now = DateTime.Now;
             if (!string.IsNullOrEmpty(StartSyncWorkDateStr))
             {
-                // 如果配置的时间在当前时间之后，那不同步考勤数据
                 DateTime startSyncWorkDate = DateTime.Parse(StartSyncWorkDateStr);
                 if(now < startSyncWorkDate)
                 {
                     return false;
                 }
             }
-
-            // 如果在每月3号之前，那不同步考勤数据，因为可能有些还没补卡
+            
             if(now.Day < 3)
             {
                 return false;
@@ -159,6 +160,10 @@ namespace DDIntegration
             return null;
         }
 
+        #endregion
+
+        #region
+
         public static void CreateAttendances(List<OapiAttendanceListResponse.RecordresultDomain> attendances)
         {
             if(attendances == null || attendances.Count == 0)
@@ -218,6 +223,8 @@ namespace DDIntegration
             }
         }
 
+        #endregion
+
         public static void SyncLeaveStatus(List<LeaveStatus> leaveStatus)
         {
             if(leaveStatus == null || leaveStatus.Count == 0)
@@ -260,6 +267,84 @@ namespace DDIntegration
                 throw new Exception("插入打卡数据到氚云失败！");
             }
         }
+
+        #region
+
+        public static void CreateSingleDayAttendance(List<H3YunAttendance> attendances, List<LeaveStatus> leaveStatus)
+        {
+            if(attendances == null || attendances.Count == 0)
+            {
+                return;
+            }
+
+            if(leaveStatus == null)
+            {
+                leaveStatus = new List<LeaveStatus>();
+            }
+
+            Dictionary<string, List<string>> userIdPair = GetUserIdPair();
+            var groupedAttendances = attendances.GroupBy(a => a.F0000006);
+            foreach (var group in groupedAttendances)
+            {
+                string userId = string.Empty;
+                if (userIdPair.ContainsKey(group.Key))
+                {
+                    userId = userIdPair[group.Key][0];
+                }
+                List<LeaveStatus> userLeaveStatus = leaveStatus.Where(l => l.userid == group.Key).ToList();
+                CreateSingleDayAttendance(group, userLeaveStatus, userId);
+            }
+        }
+
+        private static void CreateSingleDayAttendance(
+            IGrouping<string, H3YunAttendance> group, 
+            List<LeaveStatus> userLeaveStatus, 
+            string userId)
+        {
+            List<H3YunSingleDayAttendance> singleDayAttendances = new List<H3YunSingleDayAttendance>();
+
+
+            List<H3YunAttendance> attendances = group.ToList();
+            var groupedAttendances = attendances.GroupBy(a => a.F0000005.ToString("yyyy-MM"));
+            foreach (var innerGroup in groupedAttendances)
+            {
+                H3YunSingleDayAttendance singleAttendance = H3YunSingleDayAttendance.ConvertFrom(innerGroup.ToList(), userLeaveStatus, userId);
+                singleDayAttendances.Add(singleAttendance);
+            }
+
+            H3YunBulkCreateRequest request = new H3YunBulkCreateRequest();
+            request.ActionName = "CreateBizObjects";
+            request.SchemaCode = SchemaCode_SingleDayAttendance;
+            foreach (H3YunSingleDayAttendance item in singleDayAttendances)
+            {
+                request.BizObjectArray.Add(JsonConvert.SerializeObject(item));
+            }
+            request.IsSubmit = true;
+
+            string postData = JsonConvert.SerializeObject(request);
+
+            HttpContent httpContent = new StringContent(postData);
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            httpContent.Headers.ContentType.CharSet = "utf-8";
+            httpContent.Headers.Add("EngineCode", H3EngineCode);
+            httpContent.Headers.Add("EngineSecret", H3Secret);
+
+            HttpClient httpClient = new HttpClient();
+            HttpResponseMessage response = httpClient.PostAsync(H3YunOapiUrl, httpContent).Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                string result = response.Content.ReadAsStringAsync().Result;
+            }
+            else
+            {
+                Console.WriteLine("插入人员当天考勤数据到氚云失败！");
+            }
+        }
+
+        #endregion
+
+        #region 
 
         public static void SyncBasicPaymentInfo(List<OapiSmartworkHrmEmployeeListResponse.EmpFieldInfoVODomain> employees)
         {
@@ -458,6 +543,49 @@ namespace DDIntegration
             
             return false;
         }
+        private static List<H3YunBasicPaymentInfo> GetExistingBasicPaymentInfo()
+        {
+            try
+            {
+                H3YunRequest request = new H3YunRequest();
+                request.ActionName = "LoadBizObjects";
+                request.SchemaCode = SchemaCode_BasicPayment;
+                request.Filter = "{\"FromRowNum\":0,\"ToRowNum\":1000,\"RequireCount\":true,\"SortByCollection\":\"[]\",\"ReturnItems\":[],\"Matcher\":{\"Type\":\"And\",\"Matchers\":[]}}";
+                string postData = JsonConvert.SerializeObject(request);
+                HttpContent httpContent = new StringContent(postData);
+                httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                httpContent.Headers.ContentType.CharSet = "utf-8";
+                httpContent.Headers.Add("EngineCode", H3EngineCode);
+                httpContent.Headers.Add("EngineSecret", H3Secret);
+
+                HttpClient httpClient = new HttpClient();
+                HttpResponseMessage response = httpClient.PostAsync(H3YunOapiUrl, httpContent).Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    string result = response.Content.ReadAsStringAsync().Result;
+                    try
+                    {
+                        GetBasicPaymentInfoResponse payments = JsonConvert.DeserializeObject<GetBasicPaymentInfoResponse>(result);
+                        if(payments != null && payments.ReturnData != null)
+                        {
+                            return payments.ReturnData.BizObjectArray;
+                        }
+                    }
+                    catch
+                    {
+                        Console.WriteLine(result);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            return null;
+        }
+
+        #endregion
 
         private static Dictionary<string, List<string>> GetUserIdPair()
         {
@@ -530,46 +658,5 @@ namespace DDIntegration
             return userIdPair;
         }
 
-        private static List<H3YunBasicPaymentInfo> GetExistingBasicPaymentInfo()
-        {
-            try
-            {
-                H3YunRequest request = new H3YunRequest();
-                request.ActionName = "LoadBizObjects";
-                request.SchemaCode = SchemaCode_BasicPayment;
-                request.Filter = "{\"FromRowNum\":0,\"ToRowNum\":1000,\"RequireCount\":true,\"SortByCollection\":\"[]\",\"ReturnItems\":[],\"Matcher\":{\"Type\":\"And\",\"Matchers\":[]}}";
-                string postData = JsonConvert.SerializeObject(request);
-                HttpContent httpContent = new StringContent(postData);
-                httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                httpContent.Headers.ContentType.CharSet = "utf-8";
-                httpContent.Headers.Add("EngineCode", H3EngineCode);
-                httpContent.Headers.Add("EngineSecret", H3Secret);
-
-                HttpClient httpClient = new HttpClient();
-                HttpResponseMessage response = httpClient.PostAsync(H3YunOapiUrl, httpContent).Result;
-                if (response.IsSuccessStatusCode)
-                {
-                    string result = response.Content.ReadAsStringAsync().Result;
-                    try
-                    {
-                        GetBasicPaymentInfoResponse payments = JsonConvert.DeserializeObject<GetBasicPaymentInfoResponse>(result);
-                        if(payments != null && payments.ReturnData != null)
-                        {
-                            return payments.ReturnData.BizObjectArray;
-                        }
-                    }
-                    catch
-                    {
-                        Console.WriteLine(result);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-
-            return null;
-        }
     }
 }

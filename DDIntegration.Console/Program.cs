@@ -66,6 +66,10 @@ namespace DDIntegration
                         Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 开始同步请假数据到氚云...");
                         H3YunInteractor.SyncLeaveStatus(leaveStatus);
                         Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 同步请假数据到氚云结束！");
+
+                        Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 开始创建氚云人员当天考勤数据...");
+
+                        Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 创建氚云人员当天考勤数据结束！");
                     }
                 }
             }
