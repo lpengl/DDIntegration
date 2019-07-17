@@ -12,12 +12,16 @@ namespace DDIntegration
 
         static void Main(string[] args)
         {
+            //H3YunInteractor.RemoveAttendance("2019", "6");
+            //return;
+
             while (true)
             {
                 DateTime now = DateTime.Now;
 
                 SyncAttendanceData(now);
                 SyncBasicPaymentInfo(now);
+                Console.WriteLine("同步数据完成！");
 
                 _lastSyncAttendanceTime = now;
                 _lastSyncEmployeeInfoTime = now;
@@ -55,10 +59,12 @@ namespace DDIntegration
 
                         Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 开始获取钉钉打卡数据...");
                         List<OapiAttendanceListResponse.RecordresultDomain> attendances = DDInteractor.GetAttendanceRecordsInfo(accessToken, userIds, startDate, endDate);
-                        Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 获取钉钉打卡数据成功，数据总数：" + attendances.Count.ToString());
+                        Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 获取钉钉打卡数据成功!");
+
                         Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 开始同步打卡数据到氚云...");
-                        H3YunInteractor.CreateAttendances(attendances);
-                        Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 同步打卡数据到氚云结束！");
+                        List<H3YunAttendance> h3yunAttendances = H3YunInteractor.CreateAttendances(attendances);
+                        Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 同步打卡数据到氚云结束，数据总数：" + h3yunAttendances.Count.ToString());
+                        Console.WriteLine();
 
                         Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 开始获取钉钉请假数据...");
                         List<LeaveStatus> leaveStatus = DDInteractor.GetLeaveStatus(accessToken, userIds, startDate, endDate);
@@ -66,10 +72,12 @@ namespace DDIntegration
                         Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 开始同步请假数据到氚云...");
                         H3YunInteractor.SyncLeaveStatus(leaveStatus);
                         Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 同步请假数据到氚云结束！");
+                        Console.WriteLine();
 
                         Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 开始创建氚云人员当天考勤数据...");
-
+                        H3YunInteractor.CreateSingleDayAttendance(h3yunAttendances, leaveStatus);
                         Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 创建氚云人员当天考勤数据结束！");
+                        Console.WriteLine();
                     }
                 }
             }

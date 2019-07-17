@@ -51,22 +51,99 @@ namespace DDIntegration
         public static H3YunSingleDayAttendance ConvertFrom(List<H3YunAttendance> attendances, List<LeaveStatus> leaveStatus, string userId)
         {
             H3YunSingleDayAttendance result = new H3YunSingleDayAttendance();
-            H3YunAttendance attendance = attendances[0];
 
+            H3YunAttendance attendance = attendances[0];
             result.F0000001 = userId;
             result.F0000002 = attendance.F0000006;
             result.F0000003 = attendance.F0000005;
             result.F0000009 = attendance.F0000005.ToString("yyyy-MM");
 
-            if(attendances.Where(a => a.F0000008 == "正常").Count() == 4)
-            {
-                //result.F0000004 = 1;
-            }
-            else if(attendances.Where(a => a.F0000008 == "").Count() == 4)
-            {
+            List<H3YunAttendance> onDutyAttendances = attendances.Where(a => a.F0000007 == "上班").OrderBy(a => a.F0000012).ToList();
+            List<H3YunAttendance> offDutyAttendances = attendances.Where(a => a.F0000007 == "下班").OrderByDescending(a => a.F0000012).ToList();
 
-            }
+            try
+            {
+                DateTime amOnDutyTime = onDutyAttendances[0].F0000012;
+                DateTime pmOnDutyTime = DateTime.MinValue;
+                if (onDutyAttendances.Count > 1)
+                {
+                    pmOnDutyTime = onDutyAttendances[1].F0000012;
+                }
 
+                DateTime amOffDutyTime = DateTime.MinValue;
+                DateTime pmOffDutyTime = offDutyAttendances[0].F0000012;
+                if (offDutyAttendances.Count > 1)
+                {
+                    amOffDutyTime = offDutyAttendances[1].F0000012;
+                }
+
+                // 请假一天
+                if (leaveStatus.Where(s => s.starttime <= amOnDutyTime && s.endtime >= pmOffDutyTime).Any())
+                {
+                    return result;
+                }
+
+                // 上午请假
+                if (leaveStatus.Where(s => s.starttime <= amOnDutyTime && s.endtime <= amOnDutyTime.AddHours(4)).Any())
+                {
+                    H3YunAttendance onDutyAttendance = onDutyAttendances.Last();
+                    H3YunAttendance offDutyAttendance = offDutyAttendances.First();
+                    if (onDutyAttendance.F0000008 == "未打卡" && offDutyAttendance.F0000008 == "未打卡")
+                    {
+                        result.F0000005 = 0.5;
+                    }
+
+                    return result;
+                }
+
+                // 下午请假
+                if (leaveStatus.Where(s => s.starttime > amOnDutyTime && s.starttime <= amOnDutyTime.AddHours(4) && s.endtime >= pmOffDutyTime).Any())
+                {
+                    H3YunAttendance onDutyAttendance = onDutyAttendances.First();
+                    H3YunAttendance offDutyAttendance = offDutyAttendances.Last();
+                    if (onDutyAttendance.F0000008 == "未打卡" && offDutyAttendance.F0000008 == "未打卡")
+                    {
+                        result.F0000005 = 0.5;
+                    }
+
+                    return result;
+                }
+
+                // 未请假并全部未打卡
+                if (attendances.Where(a => a.F0000008 == "未打卡").Count() == attendances.Count)
+                {
+                    result.F0000005 = 1;
+                    return result;
+                }
+
+                // 不存在未打卡
+                if (attendances.Where(a => a.F0000008 == "未打卡").Count() == 0)
+                {
+                    result.F0000004 = 1;
+                    return result;
+                }
+
+                // 上午旷工
+                if (attendances.Where(a => a.F0000012 == amOnDutyTime && a.F0000008 == "未打卡").Any() &&
+                    attendances.Where(a => a.F0000012 == amOffDutyTime && a.F0000008 == "未打卡").Any())
+                {
+                    result.F0000005 = 0.5;
+
+                    return result;
+                }
+
+                // 下午旷工
+                if (attendances.Where(a => a.F0000012 == pmOnDutyTime && a.F0000008 == "未打卡").Any() &&
+                    attendances.Where(a => a.F0000012 == pmOffDutyTime && a.F0000008 == "未打卡").Any())
+                {
+                    result.F0000005 = 0.5;
+                    return result;
+                }
+            }
+            catch(Exception ex)
+            {
+            }
+            
             return result;
         }
     }

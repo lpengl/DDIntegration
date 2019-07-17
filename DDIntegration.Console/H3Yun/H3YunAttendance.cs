@@ -117,13 +117,13 @@ namespace DDIntegration
             result.F0000012 = Utility.ParseTime(record.BaseCheckTime);
             result.F0000013 = Utility.ParseTime(record.UserCheckTime);
             result.F0000014 = GetSourceType(record.SourceType);
-            if(result.F0000008 == "迟到")
+            if(result.F0000008 == "迟到" || result.F0000008 == "严重迟到")
             {
-                result.F0000015 = (result.F0000013 - result.F0000012).Minutes;
+                result.F0000015 = (int)(result.F0000013 - result.F0000012).TotalMinutes;
             }
             else if (result.F0000008 == "早退")
             {
-                result.F0000016 = (result.F0000012 - result.F0000013).Minutes;
+                result.F0000016 = (int)(result.F0000012 - result.F0000013).TotalMinutes;
             }
             result.F0000017 = result.F0000005.ToString("yyyy-MM");
 

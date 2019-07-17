@@ -53,7 +53,10 @@ namespace DDIntegration
                 {
                     throw new Exception("获取用户列表失败，错误信息: " + response.Errmsg);
                 }
-                userIds.AddRange(response.UserIds);
+                if(response.UserIds != null)
+                {
+                    userIds.AddRange(response.UserIds);
+                }
             }
 
             return userIds.Distinct().ToList();

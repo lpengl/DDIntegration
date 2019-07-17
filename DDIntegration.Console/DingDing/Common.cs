@@ -12,7 +12,6 @@ namespace DDIntegration
 
         public static string GetAccessToken()
         {
-            Console.WriteLine("正在获取AccessToken...");
             DefaultDingTalkClient client = new DefaultDingTalkClient(GetTokenUrl);
             OapiGettokenRequest request = new OapiGettokenRequest();
             request.Appkey = ConfigurationManager.AppSettings["Appkey"];
@@ -25,7 +24,6 @@ namespace DDIntegration
             }
 
             string accessToken = response.AccessToken;
-            Console.WriteLine(string.Format("获取AccessToken成功，Token:{0}。", accessToken));
             return accessToken;
         }
     }

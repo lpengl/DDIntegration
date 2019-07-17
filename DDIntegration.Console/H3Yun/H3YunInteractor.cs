@@ -162,13 +162,36 @@ namespace DDIntegration
 
         #endregion
 
+        public static void RemoveAttendance(string year, string month)
+        {
+            Dictionary<string, object> dicParams = new Dictionary<string, object>();
+            dicParams.Add("ActionName", "OnInvoke");
+            dicParams.Add("Controller", "H3InfoController");
+            dicParams.Add("AppCode", AppCode);
+            dicParams.Add("Command", "RemoveAttendances");
+            dicParams.Add("TargetYear", year);
+            dicParams.Add("TargetMonth", month);
+
+            string postData = JsonConvert.SerializeObject(dicParams);
+
+            HttpContent httpContent = new StringContent(postData);
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            httpContent.Headers.ContentType.CharSet = "utf-8";
+            httpContent.Headers.Add("EngineCode", H3EngineCode);
+            httpContent.Headers.Add("EngineSecret", H3Secret);
+
+            HttpClient httpClient = new HttpClient();
+
+            HttpResponseMessage response = httpClient.PostAsync(H3YunOapiUrl, httpContent).Result;
+        }
+
         #region
 
-        public static void CreateAttendances(List<OapiAttendanceListResponse.RecordresultDomain> attendances)
+        public static List<H3YunAttendance> CreateAttendances(List<OapiAttendanceListResponse.RecordresultDomain> attendances)
         {
             if(attendances == null || attendances.Count == 0)
             {
-                return;
+                return new List<H3YunAttendance>();
             }
 
             attendances = attendances.OrderBy(a => a.WorkDate).ToList();
@@ -177,7 +200,9 @@ namespace DDIntegration
             {
                 h3Attendances.Add(H3YunAttendance.ConvertFrom(record));
             }
-            
+
+            h3Attendances = h3Attendances.Distinct(new H3YunAttendanceComparer()).ToList();
+
             int size = 200;
             for(int offset = 0; offset < h3Attendances.Count; offset = offset + size)
             {
@@ -188,6 +213,8 @@ namespace DDIntegration
                 }
                 CreateAttendancesCore(h3Attendances.GetRange(offset, takeCount));
             }
+
+            return h3Attendances;
         }
 
         private static void CreateAttendancesCore(List<H3YunAttendance> h3Attendances)
@@ -302,10 +329,9 @@ namespace DDIntegration
             string userId)
         {
             List<H3YunSingleDayAttendance> singleDayAttendances = new List<H3YunSingleDayAttendance>();
-
-
+            
             List<H3YunAttendance> attendances = group.ToList();
-            var groupedAttendances = attendances.GroupBy(a => a.F0000005.ToString("yyyy-MM"));
+            var groupedAttendances = attendances.GroupBy(a => a.F0000005.ToString("yyyy-MM-dd"));
             foreach (var innerGroup in groupedAttendances)
             {
                 H3YunSingleDayAttendance singleAttendance = H3YunSingleDayAttendance.ConvertFrom(innerGroup.ToList(), userLeaveStatus, userId);
@@ -442,7 +468,7 @@ namespace DDIntegration
             if (response.IsSuccessStatusCode)
             {
                 string result = response.Content.ReadAsStringAsync().Result;
-                Console.WriteLine(result);
+                //Console.WriteLine(result);
             }
             else
             {
@@ -486,7 +512,7 @@ namespace DDIntegration
                     if (response.IsSuccessStatusCode)
                     {
                         string result = response.Content.ReadAsStringAsync().Result;
-                        Console.WriteLine(result);
+                        //Console.WriteLine(result);
                     }
                     else
                     {

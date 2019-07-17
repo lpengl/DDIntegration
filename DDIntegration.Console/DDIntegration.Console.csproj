@@ -55,6 +55,7 @@
     <Compile Include="DingDing\ZhiNengRenShi.cs" />
     <Compile Include="H3Yun\GetBasicPaymentInfoResponse.cs" />
     <Compile Include="H3Yun\GetJieSuanResponse.cs" />
+    <Compile Include="H3Yun\H3YunAttendanceComparer.cs" />
     <Compile Include="H3Yun\H3YunSingleDayAttendance.cs" />
     <Compile Include="H3Yun\H3YunJieSuan.cs" />
     <Compile Include="H3Yun\H3YunLeaveStatus.cs" />
