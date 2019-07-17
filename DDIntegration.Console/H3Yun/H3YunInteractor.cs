@@ -569,6 +569,7 @@ namespace DDIntegration
             
             return false;
         }
+
         private static List<H3YunBasicPaymentInfo> GetExistingBasicPaymentInfo()
         {
             try

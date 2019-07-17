@@ -37,7 +37,7 @@ namespace DDIntegration
                     takeUserCount = userIds.Count - offset;
                 }
                 req.UseridList = string.Join(",", userIds.GetRange(offset, takeUserCount));
-                req.FieldFilterList = "sys00-name,sys00-dept,sys00-position,sys01-regularTime";
+                req.FieldFilterList = "sys00-name,sys00-dept,sys00-position,sys00-confirmJoinTime,sys01-regularTime,sys01-employeeStatus";
                 OapiSmartworkHrmEmployeeListResponse rsp = client.Execute(req, accessToken);
                 if(rsp.Errcode != 0)
                 {

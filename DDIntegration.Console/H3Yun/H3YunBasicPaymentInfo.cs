@@ -30,6 +30,11 @@ namespace DDIntegration
         public string F0000004 { get; set; }
 
         /// <summary>
+        /// 入职时间
+        /// </summary>
+        public DateTime F0000011 { get; set; }
+
+        /// <summary>
         /// 转正日期
         /// </summary>
         public DateTime F0000013 { get; set; }
@@ -38,6 +43,11 @@ namespace DDIntegration
         /// 所在部门
         /// </summary>
         public string F0001366 { get; set; }
+
+        /// <summary>
+        /// 状态
+        /// </summary>
+        public string F0001362 { get; set; }
 
         public static H3YunBasicPaymentInfo ConvertFrom(EmpFieldInfoVODomain empInfo)
         {
@@ -54,6 +64,16 @@ namespace DDIntegration
                     case "sys00-position":
                         result.F0000004 = field.Value;
                         break;
+                    case "sys00-confirmJoinTime":
+                        if (field.Value != null)
+                        {
+                            result.F0000011 = DateTime.Parse(field.Value);
+                        }
+                        else
+                        {
+                            result.F0000011 = origin;
+                        }
+                        break;
                     case "sys01-regularTime":
                         if(field.Value != null)
                         {
@@ -63,6 +83,9 @@ namespace DDIntegration
                         {
                             result.F0000013 = origin;
                         }
+                        break;
+                    case "sys01-employeeStatus":
+                        result.F0001362 = field.Label;
                         break;
                 }
             }
