@@ -57,24 +57,60 @@ namespace DDIntegration
             result.F0000002 = attendance.F0000006;
             result.F0000003 = attendance.F0000005;
             result.F0000009 = attendance.F0000005.ToString("yyyy-MM");
+            // 如果只打了一次卡，记为旷工
+            if(attendances.Count == 1)
+            {
+                result.F0000005 = 1;
+                return result;
+            }
+
+            List<H3YunAttendance> weiDaKaAttends = attendances.Where(a => a.F0000008 == "未打卡").ToList();
 
             List<H3YunAttendance> onDutyAttendances = attendances.Where(a => a.F0000007 == "上班").OrderBy(a => a.F0000012).ToList();
             List<H3YunAttendance> offDutyAttendances = attendances.Where(a => a.F0000007 == "下班").OrderByDescending(a => a.F0000012).ToList();
 
             try
             {
-                DateTime amOnDutyTime = onDutyAttendances[0].F0000012;
+                DateTime amOnDutyTime = DateTime.MinValue;
                 DateTime pmOnDutyTime = DateTime.MinValue;
                 if (onDutyAttendances.Count > 1)
                 {
+                    amOnDutyTime = onDutyAttendances[0].F0000012;
                     pmOnDutyTime = onDutyAttendances[1].F0000012;
+                }
+                else
+                {
+                    if(onDutyAttendances[0].F0000012.Hour < 12)
+                    {
+                        amOnDutyTime = onDutyAttendances[0].F0000012;
+                        pmOnDutyTime = new DateTime(amOnDutyTime.Year, amOnDutyTime.Month, amOnDutyTime.Day, 13, 0, 0);
+                    }
+                    else
+                    {
+                        pmOnDutyTime = onDutyAttendances[0].F0000012;
+                        amOnDutyTime = new DateTime(pmOnDutyTime.Year, pmOnDutyTime.Month, pmOnDutyTime.Day, 8, 0, 0);
+                    }
                 }
 
                 DateTime amOffDutyTime = DateTime.MinValue;
-                DateTime pmOffDutyTime = offDutyAttendances[0].F0000012;
+                DateTime pmOffDutyTime = DateTime.MinValue;
                 if (offDutyAttendances.Count > 1)
                 {
+                    pmOffDutyTime = offDutyAttendances[0].F0000012;
                     amOffDutyTime = offDutyAttendances[1].F0000012;
+                }
+                else
+                {
+                    if(offDutyAttendances[0].F0000012.Hour < 14)
+                    {
+                        amOffDutyTime = offDutyAttendances[0].F0000012;
+                        pmOffDutyTime = new DateTime(amOffDutyTime.Year, amOffDutyTime.Month, amOffDutyTime.Day, 17, 0, 0);
+                    }
+                    else
+                    {
+                        pmOffDutyTime = offDutyAttendances[0].F0000012;
+                        amOffDutyTime = new DateTime(pmOffDutyTime.Year, pmOffDutyTime.Month, pmOffDutyTime.Day, 12, 0, 0);
+                    }
                 }
 
                 // 请假一天
@@ -86,58 +122,79 @@ namespace DDIntegration
                 // 上午请假
                 if (leaveStatus.Where(s => s.starttime <= amOnDutyTime && s.endtime <= amOnDutyTime.AddHours(4)).Any())
                 {
-                    H3YunAttendance onDutyAttendance = onDutyAttendances.Last();
-                    H3YunAttendance offDutyAttendance = offDutyAttendances.First();
-                    if (onDutyAttendance.F0000008 == "未打卡" && offDutyAttendance.F0000008 == "未打卡")
+                    // 获取下午的打卡情况
+                    H3YunAttendance onDutyAttendance = onDutyAttendances.FirstOrDefault(a => a.F0000012 > amOffDutyTime);
+                    H3YunAttendance offDutyAttendance = offDutyAttendances.FirstOrDefault(a => a.F0000012 > pmOnDutyTime);
+                    if (onDutyAttendance == null || offDutyAttendance == null || 
+                        onDutyAttendance.F0000008 == "未打卡" && offDutyAttendance.F0000008 == "未打卡")
                     {
                         result.F0000005 = 0.5;
                     }
-
                     return result;
                 }
 
                 // 下午请假
                 if (leaveStatus.Where(s => s.starttime > amOnDutyTime && s.starttime <= amOnDutyTime.AddHours(4) && s.endtime >= pmOffDutyTime).Any())
                 {
-                    H3YunAttendance onDutyAttendance = onDutyAttendances.First();
-                    H3YunAttendance offDutyAttendance = offDutyAttendances.Last();
-                    if (onDutyAttendance.F0000008 == "未打卡" && offDutyAttendance.F0000008 == "未打卡")
+                    // 获取上午的打卡情况
+                    H3YunAttendance onDutyAttendance = onDutyAttendances.FirstOrDefault(a => a.F0000012 < amOffDutyTime);
+                    H3YunAttendance offDutyAttendance = offDutyAttendances.FirstOrDefault(a => a.F0000012 < pmOnDutyTime);
+                    if (onDutyAttendance == null || offDutyAttendance == null || 
+                        onDutyAttendance.F0000008 == "未打卡" && offDutyAttendance.F0000008 == "未打卡")
                     {
                         result.F0000005 = 0.5;
                     }
-
                     return result;
                 }
 
-                // 未请假并全部未打卡
-                if (attendances.Where(a => a.F0000008 == "未打卡").Count() == attendances.Count)
+
+                // 未请假并且全部未打卡或大于三次未打卡，旷工一天
+                if (weiDaKaAttends.Count() == attendances.Count ||
+                    weiDaKaAttends.Count() >= 3)
                 {
                     result.F0000005 = 1;
                     return result;
                 }
 
-                // 不存在未打卡
-                if (attendances.Where(a => a.F0000008 == "未打卡").Count() == 0)
+                // 上午旷工
+                if (onDutyAttendances.Where(a => a.F0000012 < amOffDutyTime && a.F0000008 == "未打卡").Any() &&
+                    offDutyAttendances.Where(a => a.F0000012 < pmOnDutyTime && a.F0000008 == "未打卡").Any())
+                {
+                    result.F0000004 = 0.5;
+                    result.F0000005 = 0.5;
+                    return result;
+                }
+
+                // 下午旷工
+                if (onDutyAttendances.Where(a => a.F0000012 > amOffDutyTime && a.F0000008 == "未打卡").Any() &&
+                    offDutyAttendances.Where(a => a.F0000012 > pmOnDutyTime && a.F0000008 == "未打卡").Any())
+                {
+                    result.F0000004 = 0.5;
+                    result.F0000005 = 0.5;
+                    return result;
+                }
+
+                // 没有未打卡
+                if(weiDaKaAttends.Count() < 2)
                 {
                     result.F0000004 = 1;
                     return result;
                 }
 
-                // 上午旷工
-                if (attendances.Where(a => a.F0000012 == amOnDutyTime && a.F0000008 == "未打卡").Any() &&
-                    attendances.Where(a => a.F0000012 == amOffDutyTime && a.F0000008 == "未打卡").Any())
+                if(weiDaKaAttends.Count() == 2)
                 {
-                    result.F0000005 = 0.5;
-
-                    return result;
-                }
-
-                // 下午旷工
-                if (attendances.Where(a => a.F0000012 == pmOnDutyTime && a.F0000008 == "未打卡").Any() &&
-                    attendances.Where(a => a.F0000012 == pmOffDutyTime && a.F0000008 == "未打卡").Any())
-                {
-                    result.F0000005 = 0.5;
-                    return result;
+                    List<H3YunAttendance> tempAttendances = attendances.OrderBy(a => a.F0000012).ToList();
+                    if(tempAttendances.Count == 4)
+                    {
+                        if(tempAttendances[0].F0000008 == "未打卡" && tempAttendances[3].F0000008 == "未打卡")
+                        {
+                            result.F0000006 = 1;
+                        }
+                        else if(tempAttendances[1].F0000008 == "未打卡" && tempAttendances[2].F0000008 == "未打卡")
+                        {
+                            result.F0000007 = 1;
+                        }
+                    }
                 }
             }
             catch(Exception ex)

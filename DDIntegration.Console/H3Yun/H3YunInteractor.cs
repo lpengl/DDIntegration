@@ -26,6 +26,10 @@ namespace DDIntegration
 
         #region
 
+        /// <summary>
+        /// 是否需要同步考勤数据
+        /// </summary>
+        /// <returns></returns>
         public static bool NeedSyncAttendanceData()
         {
             DateTime now = DateTime.Now;
@@ -187,6 +191,11 @@ namespace DDIntegration
 
         #region
 
+        /// <summary>
+        /// 创建考勤数据
+        /// </summary>
+        /// <param name="attendances"></param>
+        /// <returns></returns>
         public static List<H3YunAttendance> CreateAttendances(List<OapiAttendanceListResponse.RecordresultDomain> attendances)
         {
             if(attendances == null || attendances.Count == 0)
@@ -252,6 +261,10 @@ namespace DDIntegration
 
         #endregion
 
+        /// <summary>
+        /// 同步请假数据
+        /// </summary>
+        /// <param name="leaveStatus"></param>
         public static void SyncLeaveStatus(List<LeaveStatus> leaveStatus)
         {
             if(leaveStatus == null || leaveStatus.Count == 0)
@@ -297,6 +310,11 @@ namespace DDIntegration
 
         #region
 
+        /// <summary>
+        /// 创建当天考勤明细
+        /// </summary>
+        /// <param name="attendances"></param>
+        /// <param name="leaveStatus"></param>
         public static void CreateSingleDayAttendance(List<H3YunAttendance> attendances, List<LeaveStatus> leaveStatus)
         {
             if(attendances == null || attendances.Count == 0)
@@ -372,6 +390,10 @@ namespace DDIntegration
 
         #region 
 
+        /// <summary>
+        /// 同步基础薪资数据
+        /// </summary>
+        /// <param name="employees"></param>
         public static void SyncBasicPaymentInfo(List<OapiSmartworkHrmEmployeeListResponse.EmpFieldInfoVODomain> employees)
         {
             if(employees == null || employees.Count == 0)
@@ -437,6 +459,10 @@ namespace DDIntegration
             UpdateBasicPaymentInfo(paymentToUpdate);
         }
 
+        /// <summary>
+        /// 创建基础薪资数据
+        /// </summary>
+        /// <param name="payments"></param>
         private static void CreateBasicPaymentInfo(List<H3YunBasicPaymentInfo> payments)
         {
             if(payments == null || payments.Count == 0)
@@ -476,6 +502,10 @@ namespace DDIntegration
             }
         }
 
+        /// <summary>
+        /// 更新基础薪资数据
+        /// </summary>
+        /// <param name="payments"></param>
         private static void UpdateBasicPaymentInfo(List<H3YunBasicPaymentInfo> payments)
         {
             if (!NeedUpdateBasicPaymentInfo())
