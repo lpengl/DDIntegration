@@ -175,26 +175,23 @@ namespace DDIntegration
                 }
 
                 // 没有未打卡
-                if(weiDaKaAttends.Count() < 2)
+                if(weiDaKaAttends.Count() == 0)
                 {
                     result.F0000004 = 1;
                     return result;
                 }
 
-                if(weiDaKaAttends.Count() == 2)
+                foreach(H3YunAttendance att in weiDaKaAttends)
                 {
-                    List<H3YunAttendance> tempAttendances = attendances.OrderBy(a => a.F0000012).ToList();
-                    if(tempAttendances.Count == 4)
+                    if(att.F0000007 == "上班" && att.F0000012 < amOffDutyTime || att.F0000007 == "下班" && att.F0000012 > pmOnDutyTime)
                     {
-                        if(tempAttendances[0].F0000008 == "未打卡" && tempAttendances[3].F0000008 == "未打卡")
-                        {
-                            result.F0000006 = 1;
-                        }
-                        else if(tempAttendances[1].F0000008 == "未打卡" && tempAttendances[2].F0000008 == "未打卡")
-                        {
-                            result.F0000007 = 1;
-                        }
+                        result.F0000006 += 1;
                     }
+                    else
+                    {
+                        result.F0000007 += 1;
+                    }
+                    result.F0000004 = 1;
                 }
             }
             catch(Exception ex)
