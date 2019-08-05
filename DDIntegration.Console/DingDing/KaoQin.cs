@@ -187,6 +187,8 @@ namespace DDIntegration
                 {
                     break;
                 }
+
+                offset = offset + limit;
             }
 
             return results;

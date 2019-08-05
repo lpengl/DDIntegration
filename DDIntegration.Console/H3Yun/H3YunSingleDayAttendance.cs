@@ -108,7 +108,7 @@ namespace DDIntegration
             }
 
             // 上午请假
-            if (leaveStatus.Where(s => s.starttime <= onDutyTime && s.endtime <= onDutyTime.AddHours(4)).Any())
+            if (leaveStatus.Where(s => s.starttime <= onDutyTime && s.endtime > onDutyTime && s.endtime <= onDutyTime.AddHours(4)).Any())
             {
                 // 获取下午的打卡情况
                 if (offDutyAttendances[0].F0000008 == "未打卡")
@@ -205,7 +205,7 @@ namespace DDIntegration
             }
 
             // 上午请假
-            if (leaveStatus.Where(s => s.starttime <= amOnDutyTime && s.endtime <= amOnDutyTime.AddHours(4)).Any())
+            if (leaveStatus.Where(s => s.starttime <= amOnDutyTime && s.endtime > amOnDutyTime && s.endtime <= amOnDutyTime.AddHours(4)).Any())
             {
                 // 获取下午的打卡情况
                 H3YunAttendance onDutyAttendance = onDutyAttendances.FirstOrDefault(a => a.F0000012 > amOffDutyTime);

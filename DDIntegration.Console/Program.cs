@@ -23,7 +23,7 @@ namespace DDIntegration
 
                     SyncAttendanceData(now);
                     SyncBasicPaymentInfo(now);
-                    Console.WriteLine("同步数据完成！\n");
+                    Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 同步数据完成！\n");
 
                     _lastSyncAttendanceTime = now;
                     _lastSyncEmployeeInfoTime = now;
