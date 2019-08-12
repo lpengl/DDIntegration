@@ -20,6 +20,7 @@ namespace DDIntegration
         private const string SchemaCode_JieSuan = "D001359a415593cd1d742569b928cf71a00c590";
         private const string SchemaCode_QingJia = "D001359a5baeebc330743b09f449d32658f5f29";
         private const string SchemaCode_SingleDayAttendance = "D00135913ef89a50a824741a57df7038537a7ef";
+        private const string SchemaCode_ShouHuoXinXi = "D00135921b9f1a1a15343ccb88c0f1256efce2b";
         private static readonly string H3EngineCode = ConfigurationManager.AppSettings["H3EngineCode"];
         private static readonly string H3Secret = ConfigurationManager.AppSettings["H3Secret"];
         private static readonly string StartSyncWorkDateStr = ConfigurationManager.AppSettings["StartSyncWorkDate"];
@@ -715,5 +716,92 @@ namespace DDIntegration
             return userIdPair;
         }
 
+        public static bool NeedSyncShiChuangData(string dateStr)
+        {
+            Dictionary<string, object> dicParams = new Dictionary<string, object>();
+            dicParams.Add("ActionName", "OnInvoke");
+            dicParams.Add("Controller", "H3ShiChuangInfoController");
+            dicParams.Add("AppCode", "D001359SCBD");
+            dicParams.Add("Command", "GetShouHuoXinXiCount");
+            dicParams.Add("TargetDate", dateStr);
+
+            string postData = JsonConvert.SerializeObject(dicParams);
+
+            HttpContent httpContent = new StringContent(postData);
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            httpContent.Headers.ContentType.CharSet = "utf-8";
+            httpContent.Headers.Add("EngineCode", H3EngineCode);
+            httpContent.Headers.Add("EngineSecret", H3Secret);
+
+            HttpClient httpClient = new HttpClient();
+
+            HttpResponseMessage response = httpClient.PostAsync(H3YunOapiUrl, httpContent).Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                string result = response.Content.ReadAsStringAsync().Result;
+                try
+                {
+                    H3YunCommonResponse commonResponse = JsonConvert.DeserializeObject<H3YunCommonResponse>(result);
+                    if (commonResponse != null && commonResponse.ReturnData != null)
+                    {
+                        string shouHuoXinXiCount = commonResponse.ReturnData["ShouHuoXinXiCount"];
+                        if (!string.IsNullOrEmpty(shouHuoXinXiCount))
+                        {
+                            return int.Parse(shouHuoXinXiCount) < 1;
+                        }
+                        return false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("获取时创数据失败！" + ex.Message);
+                }
+            }
+            else
+            {
+                Console.WriteLine("获取时创数据失败！");
+            }
+            return false;
+        }
+
+        public static void CreateShouHuoXinXi(List<TransitInfo> transitInfo)
+        {
+            if(transitInfo == null || transitInfo.Count < 1)
+            {
+                return;
+            }
+
+            H3YunBulkCreateRequest request = new H3YunBulkCreateRequest();
+            request.ActionName = "CreateBizObjects";
+            request.SchemaCode = SchemaCode_ShouHuoXinXi;
+            foreach (TransitInfo item in transitInfo)
+            {
+                H3YunShouHuoXinxi shouHuoInfo = item.ConvertToShouHuoXinXi();
+                request.BizObjectArray.Add(JsonConvert.SerializeObject(shouHuoInfo));
+            }
+            request.IsSubmit = true;
+
+            string postData = JsonConvert.SerializeObject(request);
+
+            HttpContent httpContent = new StringContent(postData);
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            httpContent.Headers.ContentType.CharSet = "utf-8";
+            httpContent.Headers.Add("EngineCode", H3EngineCode);
+            httpContent.Headers.Add("EngineSecret", H3Secret);
+
+            HttpClient httpClient = new HttpClient();
+
+            HttpResponseMessage response = httpClient.PostAsync(H3YunOapiUrl, httpContent).Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                string result = response.Content.ReadAsStringAsync().Result;
+            }
+            else
+            {
+                throw new Exception("插入时创收货信息到氚云失败！");
+            }
+        }
     }
 }

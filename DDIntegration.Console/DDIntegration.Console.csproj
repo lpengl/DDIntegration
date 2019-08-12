@@ -37,6 +37,8 @@
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -48,6 +50,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Connected Services\ShiChuangService\Reference.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Compile>
     <Compile Include="DingDing\Common.cs" />
     <Compile Include="DingDing\DDInteractor.cs" />
     <Compile Include="DingDing\KaoQin.cs" />
@@ -56,6 +63,7 @@
     <Compile Include="H3Yun\GetBasicPaymentInfoResponse.cs" />
     <Compile Include="H3Yun\GetJieSuanResponse.cs" />
     <Compile Include="H3Yun\H3YunAttendanceComparer.cs" />
+    <Compile Include="H3Yun\H3YunShouHuoXinXi.cs" />
     <Compile Include="H3Yun\H3YunSingleDayAttendance.cs" />
     <Compile Include="H3Yun\H3YunJieSuan.cs" />
     <Compile Include="H3Yun\H3YunLeaveStatus.cs" />
@@ -71,11 +79,35 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DingDing\TongXunLu.cs" />
+    <Compile Include="ShiChuang\ShiChuangResultBase.cs" />
+    <Compile Include="ShiChuang\ShouHuoXinXi.cs" />
     <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Connected Services\ShiChuangService\WebServiceForDing.wsdl" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadataStorage Include="Connected Services\ShiChuangService\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Connected Services\ShiChuangService\WebServiceForDing.disco" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Connected Services\ShiChuangService\configuration91.svcinfo" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Connected Services\ShiChuangService\configuration.svcinfo" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Connected Services\ShiChuangService\Reference.svcmap">
+      <Generator>WCF Proxy Generator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

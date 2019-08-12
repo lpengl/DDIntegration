@@ -1,4 +1,5 @@
 ﻿using DingTalk.Api.Response;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -9,6 +10,7 @@ namespace DDIntegration
     {
         private static DateTime _lastSyncAttendanceTime = DateTime.MinValue;
         private static DateTime _lastSyncEmployeeInfoTime = DateTime.MinValue;
+        private static DateTime _lastSyncShiChuangDataTime = DateTime.MinValue;
 
         static void Main(string[] args)
         {
@@ -23,6 +25,7 @@ namespace DDIntegration
 
                     SyncAttendanceData(now);
                     SyncBasicPaymentInfo(now);
+                    SyncShiChuangData();
                     Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " - 同步数据完成！\n");
 
                     _lastSyncAttendanceTime = now;
@@ -128,6 +131,42 @@ namespace DDIntegration
             {
                 Console.WriteLine("同步员工数据失败：" + ex.Message);
             }
+        }
+
+        static void SyncShiChuangData()
+        {
+            Console.WriteLine("\n开始同步时创数据...");
+            DateTime now = DateTime.Now;
+
+            try
+            {
+                if(_lastSyncShiChuangDataTime == DateTime.MinValue ||
+                    _lastSyncShiChuangDataTime.AddHours(4) < now)
+                {
+                    string targetDate = now.AddDays(-1).ToString("yyyy-MM-dd");
+                    if (!H3YunInteractor.NeedSyncShiChuangData(targetDate))
+                    {
+                        return;
+                    }
+
+                    ShiChuangService.WebServiceForDingSoapClient client = new ShiChuangService.WebServiceForDingSoapClient();
+                    string data = client.SelectQuery(string.Empty, targetDate);
+                    ShouHuoXinXi shouHuo = JsonConvert.DeserializeObject<ShouHuoXinXi>(data);
+
+                    if(shouHuo.flag != "1")
+                    {
+                        Console.WriteLine("同步时创数据失败，" + shouHuo.msg);
+                    }
+
+                    H3YunInteractor.CreateShouHuoXinXi(shouHuo.transitInfo);
+                }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("同步时创数据失败，" + ex.Message);
+            }
+
+            Console.WriteLine("同步时创数据结束！");
         }
     }
 }
